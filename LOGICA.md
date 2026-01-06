@@ -1,82 +1,61 @@
-# Lógica de Movimiento y Agrupación - HexaFlow
+# HEXA FLOW - Lógica del Juego
 
-Este documento describe el algoritmo central que gobierna cómo se mueven, agrupan y eliminan las fichas en el juego.
+## Concepto Core
+El juego se basa en el flujo de fichas de colores a través de un tablero hexagonal. El objetivo es crear pilas de al menos 10 fichas del mismo color para eliminarlas y ganar puntos.
 
-## Concepto General
-El objetivo es mantener el tablero limpio agrupando fichas del mismo color. La regla de oro es: **"Las fichas siempre fluyen hacia la pila más alta (o dominante) de su mismo color"**.
+## Estructuras de Datos
+- **Coordenadas**: Sistema Axial (q, r).
+- **Tablero (`state.board`)**: Un `Map` donde la clave es "q,r" y el valor es un objeto Celda `{ type, chips: [] }`.
+- **Fichas (`chips`)**: Un array simple de strings (colores hex). El último elemento es el superior (Top).
 
-## Algoritmo Principal: `spreadToNeighbors`
-Este proceso se activa inmediatamente después de que el jugador coloca una pila de fichas en el tablero.
+## Diagrama de Flujo (Sistema de Cascada / Queue)
 
-### Pseudocódigo
-1.  **Evaluar Pila Central**: Se analiza la pila recién colocada en la posición `(q, r)`.
-2.  **Bucle de Distribución**: Mientras la pila central tenga fichas:
-    *   Obtener el color de la ficha superior (`topColor`).
-    *   **Escanear Vecinos + Centro**: Buscar todas las celdas adyacentes (y la propia central) que tengan una ficha de `topColor` en su cima.
-    *   **Identificar Destino (Target)**:
-        *   De todas las celdas encontradas, elegir la **Dominante**.
-        *   Criterio de Dominancia:
-            1.  Mayor cantidad de fichas consecutivas de `topColor`.
-            2.  Mayor altura total de la pila (desempate).
-    *   **Mover Fichas**:
-        *   **Caso A: Múltiples Vecinos (Animación 2 Pasos)**:
-            1.  **Reunir**: Todas las fichas de los vecinos van al Centro.
-            2.  **Verificar Superávit**: Si en el Centro se acumulan **10 o más fichas**, se eliminan allí mismo (sin viajar al destino).
-            3.  **Distribuir**: Si son menos de 10, todo el grupo viaja del Centro a la Pila Dominante.
-        *   **Caso B: Un Solo Vecino (Animación Directa)**:
-            *   Movimiento directo de origen a destino.
-    *   **Verificar Eliminación**: Si la pila destino acumula 10 o más fichas del mismo color, se eliminan y se otorgan puntos.
-    *   **Repetir**: Si quedan fichas en el Centro (de otro color), repetir el proceso. De lo contrario, terminar.
-
-## Diagrama de Flujo
+El juego utiliza un sistema de **Cola de Eventos** para manejar las reacciones en cadena. Cuando una celda es activada (por el jugador o por recibir fichas), entra en la cola. Mientras la cola no esté vacía, el juego procesa la siguiente celda.
 
 ```mermaid
 flowchart TD
-    Start([Inicio: Jugador coloca Pila en Q,R]) --> CheckCenter{¿Pila Centro tiene fichas?}
-    CheckCenter -- No --> End([Fin del Turno])
-    CheckCenter -- Sí --> GetColor[Obtener color superior: TopColor]
+    Start([Inicio: Celda Q,R agregada a Cola]) --> Loop{¿Cola > 0?}
+    Loop -- No --> End([Fin de Cascada])
+    Loop -- Sí --> Pop[Extraer Siguiente Celda: Current]
     
-    GetColor --> Scan[Escanear Vecinos + Centro]
-    Scan --> FindMatches{¿Vecinos con TopColor?}
+    Pop --> CheckChips{¿Tiene Fichas?}
+    CheckChips -- No --> Loop
+    CheckChips -- Sí --> GetColor[TopColor de Current]
     
-    FindMatches -- Sí --> CountNeighbors{¿Cuántos Vecinos?}
+    GetColor --> Scan[Escanear Vecinos]
+    Scan --> MatchCount{¿Cuantos Vecinos con match?}
     
-    %% CASO INDIRECTO: Múltiples Vecinos
-    CountNeighbors -- "> 1 vecino" --> SelectTargetA[Target = Dominante]
-    SelectTargetA --> Gather[Fase 1: Reunir Vecinos en Centro]
-    Gather --> CheckOverflow{¿Centro tiene >= 10?}
+    %% CASO 0
+    MatchCount -- 0 --> Stay[Stay: Fichas se quedan]
+    Stay --> Loop
     
-    CheckOverflow -- Sí (Superávit) --> ElimCenter[ELIMINAR fichas en Centro]
-    ElimCenter --> NextColor
+    %% CASO 1
+    MatchCount -- 1 --> MoveDirect[Mover Directo a Target]
+    MoveDirect --> AddTarget[Agregar Target a Cola]
+    AddTarget --> CheckCurrent[Agregar Current a Cola]
+    CheckCurrent --> CheckElim[¿Target >= 10? -> Eliminar]
+    CheckElim --> Loop
     
-    CheckOverflow -- No --> Distribute[Fase 2: Distribuir Centro -> Target]
-    Distribute --> CheckElimTarget
+    %% CASO > 1
+    MatchCount -- "> 1" --> Gather[Gather: Vecinos -> Current]
+    Gather --> AddNeighbors[Agregar Vecinos (vacíos) a Cola]
+    AddNeighbors --> Recalc[Recalcular Current]
     
-    %% CASO DIRECTO: 1 Vecino
-    CountNeighbors -- "1 vecino" --> SelectTargetB[Target = Dominante]
-    SelectTargetB --> MoveDirect[Animación Directa: Origen -> Destino]
-    MoveDirect --> CheckElimTarget
+    Recalc --> Overflow{¿Current >= 10?}
+    Overflow -- Sí --> ElimCenter[Eliminar en Current]
+    ElimCenter --> CurrentAgain[Agregar Current a Cola]
+    CurrentAgain --> Loop
     
-    %% CASO FALLBACK
-    FindMatches -- No (Solo Centro) --> Stay[Fichas se quedan en Centro]
-    Stay --> NextColor
-    
-    %% PROCESO COMÚN
-    CheckElimTarget{¿Target >= 10?}
-    CheckElimTarget -- Sí --> Clear[ELIMINAR fichas y dar Puntos]
-    CheckElimTarget -- No --> NextColor
-    
-    Clear --> NextColor[¿Quedan fichas en Centro?]
-    NextColor -- Sí --> GetColor
-    NextColor -- No --> End
+    Overflow -- No --> Loop
+    %% Nota: Si no hay overflow tras Gather, se queda ahí (Island) hasta que otro evento lo despierte.
 ```
 
-## Mecánicas Adicionales
-
-### Cascada (`processMove`)
-Una vez finalizada la distribución inicial (`spreadToNeighbors`), el juego entra en una fase de estabilización. Si el movimiento de fichas ha creado nuevas oportunidades (ej. al descubrirse un nuevo color en una pila vecina), se activa una reacción en cadena donde las fichas buscan nuevamente su "pila dominante" adyacente.
-
-### Prevención de Bucles
-Para evitar que las fichas entren en un ciclo infinito de movimiento entre dos pilas iguales:
-*   El algoritmo incluye un contador de seguridad (`safetyLoop`) que detiene la ejecución si se detectan demasiadas iteraciones sin resolución.
-*   La lógica prioriza estrictamente la pila con **más fichas del mismo color**; si son iguales, la pila con más altura total. Si son idénticas en todo, no se mueven.
+### Reglas de Cascada (Queue System)
+1.  **Activación**: Cualquier celda que sea *origen* o *destino* de un movimiento, o que sufra una eliminación, se agrega a la **Cola de Procesamiento**.
+2.  **Ciclo de Vida**:
+    *   Extraemos una celda de la cola.
+    *   Si tiene fichas, buscamos vecinos coincidentes.
+    *   Si **Mueve** sus fichas -> La celda destino se activa (entra a cola). La celda origen se activa de nuevo (para ver su siguiente color).
+    *   Si **Reúne (Gather)** fichas -> Los vecinos origen se activan (perdieron fichas, revelan color). La celda actual crece.
+    *   Si **Elimina** fichas -> La celda se activa de nuevo para procesar las fichas que estaban debajo.
+3.  **Estabilidad**: El turno termina solo cuando la cola está vacía y ninguna ficha puede moverse más.

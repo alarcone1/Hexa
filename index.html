@@ -11,137 +11,172 @@
 <body>
 
     <div id="game-container">
-        <div id="hud">
-            <button id="help-trigger" onclick="toggleHelp()" title="Ayuda">?</button>
-            <button id="config-trigger" onclick="toggleConfig()" title="Configuración">⚙</button>
-            <div>PUNTOS: <span id="score">0</span></div>
-            <div>META: <span id="goal">100</span></div>
-            <div>RONDA: <span id="round">1</span></div>
-            <div>MOV: <span id="moves-count">0</span></div>
-        </div>
-
-        <canvas id="gameCanvas"></canvas>
-        <div id="message-overlay"></div>
-
-        <div id="high-scores">
-            <h3>TOP 5 SCORES</h3>
-            <div id="scores-list"></div>
-        </div>
-
-        <div id="controls">
-            <div id="pile-0" class="pile-slot" onclick="selectPile(0)"></div>
-            <div id="pile-1" class="pile-slot" onclick="selectPile(1)"></div>
-            <div id="pile-2" class="pile-slot" onclick="selectPile(2)"></div>
-            <button id="mulligan-btn" onclick="mulligan()">Mulligan (3)</button>
-        </div>
-
-        <!-- MODAL DE AYUDA -->
-        <div id="help-modal">
-            <div class="help-content">
-                <h2>Cómo Jugar HexaFlow</h2>
-
-                <div class="help-section">
-                    <h3>Objetivo</h3>
-                    <p>Alcanza la meta de puntos de cada ronda eliminando fichas del tablero. Ganas puntos al apilar 10
-                        o más fichas del mismo color en una celda.</p>
+        <div id="game-container">
+            <div id="hud">
+                <!-- Botones de Sistema (Arriba Izquierda) -->
+                <div class="hud-buttons">
+                    <button id="help-trigger" onclick="toggleHelp()" data-tooltip="Ayuda">?</button>
+                    <button id="config-trigger" onclick="toggleConfig()" data-tooltip="Configuración">⚙</button>
+                    <button id="quick-restart-trigger" onclick="newGame()" data-tooltip="Reiniciar">↻</button>
                 </div>
+            </div>
 
-                <div class="help-section">
-                    <h3>Mecánica de Flujo</h3>
-                    <p>Cuando colocas una pila, la ficha superior busca celdas vecinas con el mismo color. Si encuentra
-                        una, "salta" hacia ella. Esto puede desencadenar una reacción en cadena si la ficha de abajo
-                        también encuentra un vecino.</p>
+            <canvas id="gameCanvas"></canvas>
+            <div id="message-overlay"></div>
+
+            <!-- Ranking Flotante ELIMINADO en favor de página dedicada -->
+
+            <!-- Barra de Estadísticas (Ahora encima de los controles) -->
+            <div id="bottom-stats">
+                <div class="stat-item"><span class="stat-label">PUNTOS</span> <span id="score" class="stat-num">0</span>
                 </div>
-
-                <div class="help-section">
-                    <h3>Controles</h3>
-                    <p>• <b>Mouse:</b> Haz clic en una pila de la parte inferior para seleccionarla y luego en una celda
-                        vacía del tablero para colocarla.</p>
-                    <p>• <b>Flechas Izq/Der:</b> Rotan visualmente el tablero para que planees mejor tus movimientos.
-                    </p>
-                    <p>• <b>Mulligan:</b> Si no te gustan tus fichas actuales, usa este botón para generar 3 nuevas
-                        (máximo 3 veces).</p>
+                <div class="stat-item"><span class="stat-label">META</span> <span id="goal" class="stat-num">100</span>
                 </div>
+                <div class="stat-item"><span class="stat-label">MOV</span> <span id="moves-count"
+                        class="stat-num">0</span></div>
+            </div>
 
-                <button id="close-help-btn" onclick="toggleHelp()">ENTENDIDO</button>
+            <div id="controls">
+                <div id="pile-0" class="pile-slot" onclick="selectPile(0)"></div>
+                <div id="pile-1" class="pile-slot" onclick="selectPile(1)"></div>
+                <div id="pile-2" class="pile-slot" onclick="selectPile(2)"></div>
+                <button id="mulligan-btn" onclick="mulligan()">
+                    <span class="btn-icon">↺</span> Otra Tanda (<span id="mulligan-count">3</span>)
+                </button>
+            </div>
+
+            <!-- MODAL DE AYUDA -->
+            <div id="help-modal">
+                <div class="help-content">
+                    <h2>Cómo Jugar HexaFlow</h2>
+
+                    <div class="help-section">
+                        <h3>Objetivo</h3>
+                        <p>Completa el nivel alcanzando la meta de puntos con la <b>mayor eficiencia posible</b>.</p>
+                        <p>Tu ranking dependerá de:</p>
+                        <ol>
+                            <li><b>Menor número de Pilas usadas</b> (Prioridad 1)</li>
+                            <li><b>Menor tiempo</b> (Prioridad 2)</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Mecánica de Flujo</h3>
+                        <p>Cuando colocas una pila, las fichas "saltan" hacia pilas vecinas del mismo color dominante.
+                            ¡Usa
+                            esto para crear reacciones en cadena y ahorrar movimientos!</p>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Controles</h3>
+                        <p>• <b>Click:</b> Selecciona pila y colócala en el tablero.</p>
+                        <p>• <b>Flechas (Mantener):</b> Rota el tablero suavemente.</p>
+                        <p>• <b>Mulligan:</b> Genera nuevas fichas (limitado).</p>
+                    </div>
+
+                    <button id="close-help-btn" onclick="toggleHelp()">ENTENDIDO</button>
+                </div>
+            </div>
+
+            <!-- MODAL DE VICTORIA -->
+            <div id="gameover-modal">
+                <div class="gameover-content">
+                    <h2 id="modal-title">🏆 ¡NIVEL COMPLETADO!</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-value" id="final-moves">0</span>
+                            <span class="stat-label">Pilas Usadas</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="final-time">0:00</span>
+                            <span class="stat-label">Tiempo</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="best-combo">0</span>
+                            <span class="stat-label">Mejor Combo</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value" id="total-eliminated">0</span>
+                            <span class="stat-label">Eliminadas</span>
+                        </div>
+                    </div>
+                    <!-- <div id="new-record" style="display: none;">🏆 ¡NUEVO RECORD!</div> -->
+                    <div class="modal-buttons">
+                        <button id="restart-btn" onclick="restartGame()">NUEVO JUEGO</button>
+                        <button id="ranking-btn" onclick="showRankingFromModal()">VER RANKING</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PÁGINA DE RANKING -->
+            <div id="ranking-modal">
+                <div class="ranking-content">
+                    <h2>🏅 SALÓN DE LA FAMA</h2>
+                    <p id="ranking-difficulty-label">Dificultad: Normal</p>
+
+                    <div class="ranking-table-header">
+                        <span>#</span>
+                        <span>Pilas</span>
+                        <span>Tiempo</span>
+                        <span>Fecha</span>
+                    </div>
+                    <div id="full-scores-list"></div>
+
+                    <button class="close-ranking-btn" onclick="closeRanking()">VOLVER</button>
+                </div>
+            </div>
+
+            <!-- MODAL DE CONFIGURACIÓN -->
+            <div id="config-modal">
+                <div class="config-content">
+                    <h2>⚙️ Configuración</h2>
+
+                    <div class="config-card">
+                        <h3>Nivel de Dificultad</h3>
+
+                        <div class="difficulty-segmented-control">
+                            <button class="segment-btn" data-difficulty="2" onclick="setDifficulty(2)">Fácil</button>
+                            <button class="segment-btn active" data-difficulty="3"
+                                onclick="setDifficulty(3)">Normal</button>
+                            <button class="segment-btn" data-difficulty="4" onclick="setDifficulty(4)">Difícil</button>
+                        </div>
+                        <div id="difficulty-description" class="config-desc-small">Radio 3 • 37 celdas</div>
+                    </div>
+
+                    <div class="config-card">
+                        <h3>Meta de Puntos</h3>
+                        <div class="height-slider-container">
+                            <input type="range" id="goal-range" min="50" max="500" step="10" value="100"
+                                onchange="setGoal(this.value)" oninput="updateGoalLabel(this.value)">
+                            <div class="slider-value"><span id="goal-label">100</span></div>
+                        </div>
+                        <p class="config-desc-small">Puntos para completar el nivel</p>
+                    </div>
+
+                    <div class="config-card">
+                        <h3>Límite de Altura</h3>
+                        <div class="height-slider-container">
+                            <input type="range" id="height-range" min="10" max="30" value="15"
+                                onchange="setMaxHeight(this.value)" oninput="updateHeightLabel(this.value)">
+                            <div class="slider-value"><span id="height-label">15</span> fichas</div>
+                        </div>
+                        <p class="config-desc-small">Máximo de fichas por celda</p>
+                    </div>
+
+                    <div class="config-actions">
+                        <button id="view-ranking-btn" onclick="showRankingFromConfig()">🏆 Salón de la Fama</button>
+                        <button id="new-game-btn" onclick="startGame()">🎮 JUGAR NUEVA PARTIDA</button>
+                        <button id="cancel-config-btn" onclick="toggleConfig()">Cancelar</button>
+                    </div>
+
+                    <div class="danger-zone-link">
+                        <a href="#" onclick="resetRankingsConfirm(); return false;">⚠️ Resetear Rankings Data</a>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- MODAL DE GAME OVER -->
-        <div id="gameover-modal">
-            <div class="gameover-content">
-                <h2>🎮 GAME OVER</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-value" id="final-score">0</span>
-                        <span class="stat-label">Puntuación Final</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="final-round">1</span>
-                        <span class="stat-label">Ronda Alcanzada</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="best-combo">0</span>
-                        <span class="stat-label">Mejor Combo</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="total-eliminated">0</span>
-                        <span class="stat-label">Fichas Eliminadas</span>
-                    </div>
-                </div>
-                <div id="new-record" style="display: none;">🏆 ¡NUEVO RÉCORD!</div>
-                <button id="restart-btn" onclick="restartGame()">JUGAR DE NUEVO</button>
-            </div>
-        </div>
-
-        <!-- MODAL DE CONFIGURACIÓN -->
-        <div id="config-modal">
-            <div class="config-content">
-                <h2>⚙️ Configuración</h2>
-
-                <div class="config-section">
-                    <h3>Nivel de Dificultad</h3>
-                    <p class="config-desc">Selecciona el tamaño del tablero</p>
-
-                    <div class="difficulty-grid">
-                        <button class="difficulty-btn selected" data-difficulty="2" onclick="setDifficulty(2)">
-                            <span class="diff-icon">○</span>
-                            <span class="diff-name">Fácil</span>
-                            <span class="diff-info">Radio 2 • 19 celdas</span>
-                        </button>
-                        <button class="difficulty-btn" data-difficulty="3" onclick="setDifficulty(3)">
-                            <span class="diff-icon">◐</span>
-                            <span class="diff-name">Normal</span>
-                            <span class="diff-info">Radio 3 • 37 celdas</span>
-                        </button>
-                        <button class="difficulty-btn" data-difficulty="4" onclick="setDifficulty(4)">
-                            <span class="diff-icon">●</span>
-                            <span class="diff-name">Difícil</span>
-                            <span class="diff-info">Radio 4 • 61 celdas</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="config-section">
-                    <h3>Límite de Altura</h3>
-                    <p class="config-desc">Máximo de fichas por celda (las del mismo color ignoran límite)</p>
-                    <div class="height-slider">
-                        <input type="range" id="height-range" min="10" max="30" value="15"
-                            onchange="setMaxHeight(this.value)" oninput="updateHeightLabel(this.value)">
-                        <span id="height-label">15</span> fichas
-                    </div>
-                </div>
-
-                <div class="config-buttons">
-                    <button id="new-game-btn" onclick="newGame()">🎮 NUEVO JUEGO</button>
-                    <button id="start-game-btn" onclick="startGame()">INICIAR CON NUEVO NIVEL</button>
-                    <button id="cancel-config-btn" onclick="toggleConfig()">CANCELAR</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="game.js?v=20260106_fix"></script>
+        <script src="game.js?v=20260106_fix"></script>
 </body>
 
 </html>

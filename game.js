@@ -7,7 +7,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const goalEl = document.getElementById('goal');
-const roundEl = document.getElementById('round');
+// const roundEl = document.getElementById('round'); 
+const movesEl = document.getElementById('moves-count');
 const mulliganBtn = document.getElementById('mulligan-btn');
 const messageOverlay = document.getElementById('message-overlay');
 const helpModal = document.getElementById('help-modal');
@@ -23,8 +24,8 @@ const configModal = document.getElementById('config-modal');
 
 let state = {
     score: 0,
-    goal: 100,
-    round: 1,
+    goal: 150, // Meta fija por partida (aumentable por dificultad si se quiere)
+    // round: 1, // ELIMINAMOS RONDAS
     mulligans: 3,
     numColors: 3,
     difficulty: 2, // Radio del tablero (2-4), inicia en Fácil
@@ -34,12 +35,14 @@ let state = {
     board: new Map(), // key: "q,r", value: { chips: [] }
     playerPiles: [null, null, null],
     selectedPileIndex: null,
-    rotation: 0, // En grados (60, 120, etc)
-    isAnimating: false,
-    isHelpOpen: false,
+    rotation: 0, // En grados
+    rotationSpeed: 0, // Velocidad actual de rotación
+    keysPressed: { ArrowLeft: false, ArrowRight: false }, // Estado de teclas
     isGameOver: false,
     isConfigOpen: false,
-    particles: [],
+    isConfigOpen: false,
+    particles: [], // Partículas en espacio de pantalla (confetti)
+    effects: [], // Efectos en espacio del tablero (eliminaciones, etc)
     // Estadísticas de la partida
     stats: {
         bestCombo: 0,
@@ -70,10 +73,111 @@ class Particle {
         this.life -= 0.02;
     }
     draw(ctx) {
-        ctx.globalAlpha = this.life;
+        ctx.globalAlpha = Math.max(0, this.life);
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.size, this.size);
         ctx.globalAlpha = 1.0;
+    }
+}
+
+// EFECTO DE ELIMINACIÓN: IMPLOSIÓN GRAVITACIONAL
+class EliminationEffect {
+    constructor(q, r, color) {
+        this.q = q;
+        this.r = r;
+        this.color = color;
+        this.startTime = performance.now();
+        this.duration = 800; // ms
+        const pos = axialToPixel(q, r);
+        this.x = pos.x;
+        this.y = pos.y;
+    }
+
+    draw(ctx, rotation, centerX, centerY) {
+        const elapsed = performance.now() - this.startTime;
+        const progress = elapsed / this.duration;
+
+        if (progress >= 1) return false; // Terminado
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.translate(this.x, this.y);
+
+        // FASE 1: IMPLOSIÓN (0.0 -> 0.4)
+        // La ficha se contrae rápidamente hacia el centro
+        if (progress < 0.4) {
+            const p = progress / 0.4;
+            const scale = 1 - p; // De 1 a 0
+
+            // Dibujar Hexágono contrayéndose
+            const size = HEX_SIZE * 0.65 * scale;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i;
+                const px = size * Math.cos(angle);
+                const py = size * Math.sin(angle);
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fillStyle = this.color;
+            ctx.fill();
+
+            // Borde brillante oscilante
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+        }
+
+        // FASE 2: DESTELLO (0.4 -> 0.6)
+        // Un flash brillante en el centro
+        else if (progress < 0.6) {
+            const p = (progress - 0.4) / 0.2; // 0 a 1
+            const alpha = 1 - Math.abs(2 * p - 1); // Fade in-out
+
+            const radius = HEX_SIZE * (0.5 + p * 0.5);
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            grad.addColorStop(0, "rgba(255, 255, 255, 1)");
+            grad.addColorStop(0.5, `rgba(255, 255, 255, ${0.8 * alpha})`);
+            grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+
+        // FASE 3: ONDA EXPANSIVA (0.4 -> 1.0)
+        // Anillo que se expande desde el centro
+        if (progress > 0.4) {
+            const p = (progress - 0.4) / 0.6; // 0 a 1
+            const radius = HEX_SIZE * (0.5 + p * 1.5); // Expansión grande
+            const alpha = 1 - p; // Fade out
+
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 3 * (1 - p);
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Segundo anillo más rápido (blanco)
+            if (p < 0.8) {
+                const r2 = HEX_SIZE * (0.2 + p * 2.0);
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = (1 - p) * 0.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, r2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        ctx.restore();
+        return true; // Sigue vivo
     }
 }
 
@@ -118,12 +222,12 @@ class AnimatedChip {
         const arc = Math.sin(this.progress * Math.PI) * arcHeight;
         this.y -= arc;
 
-        // Fase de flip (rotación en Y como hoja de libro)
-        this.flipPhase = this.progress;
-
         if (this.progress >= 1) {
             this.done = true;
         }
+
+        // Actualizar fase de volteo
+        this.flipPhase = this.progress;
     }
 
     easeInOutQuad(t) {
@@ -462,7 +566,7 @@ function mulligan() {
     if (state.mulligans > 0 && !state.isAnimating && !state.isHelpOpen) {
         state.mulligans--;
         state.playerPiles = [generatePile(), generatePile(), generatePile()];
-        mulliganBtn.innerText = `Mulligan (${state.mulligans})`;
+        mulliganBtn.innerHTML = `<span class="btn-icon">↺</span> Otra Tanda (${state.mulligans})`;
         if (state.mulligans === 0) mulliganBtn.disabled = true;
         updatePileUI();
     }
@@ -471,8 +575,64 @@ function mulligan() {
 function toggleHelp() {
     state.isHelpOpen = !state.isHelpOpen;
     helpModal.classList.toggle('active', state.isHelpOpen);
-    if (state.isHelpOpen) {
-        updateHighScores(); // Mostrar records en ayuda si se desea
+    // El ranking ya no se muestra en el modal de ayuda
+}
+
+function showRankingFromConfig() {
+    toggleConfig(); // Cerrar config
+    showRankingModal();
+}
+
+function showRankingFromModal() {
+    gameoverModal.classList.remove('active');
+    showRankingModal();
+}
+
+function showRankingModal() {
+    const modal = document.getElementById('ranking-modal');
+    const label = document.getElementById('ranking-difficulty-label');
+    const container = document.getElementById('full-scores-list');
+
+    label.innerText = `DIFICULTAD: ${DIFFICULTY_NAMES[state.difficulty].toUpperCase()}`;
+
+    // Obtener scores
+    const storageKey = 'hexaflow_scores_v4'; // Nueva versión de scores
+    let allScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    let levelScores = allScores[state.difficulty] || [];
+
+    // Renderizar tabla
+    if (levelScores.length === 0) {
+        container.innerHTML = '<div style="padding: 20px; color: #64748b;">No hay records en este nivel aún.</div>';
+    } else {
+        container.innerHTML = levelScores.map((s, i) => {
+            let medalClass = '';
+            if (i === 0) medalClass = 'gold';
+            if (i === 1) medalClass = 'silver';
+            if (i === 2) medalClass = 'bronze';
+
+            return `
+            <div class="ranking-row ${medalClass}">
+                <span>${i + 1}</span>
+                <span>${s.moves}</span>
+                <span>${formatTime(s.time)}</span>
+                <span style="font-size: 0.8em; opacity: 0.7;">${s.date}</span>
+            </div>
+            `;
+        }).join('');
+    }
+
+    modal.classList.add('active');
+}
+
+function closeRanking() {
+    document.getElementById('ranking-modal').classList.remove('active');
+}
+
+function resetRankingsConfirm() {
+    if (confirm("⚠️ ¿Estás seguro de que quieres borrar TODOS los rankings? Esta acción no se puede deshacer.")) {
+        localStorage.removeItem('hexaflow_scores_v4');
+        alert("Rankings eliminados.");
+        toggleConfig(); // Cerrar config
     }
 }
 
@@ -658,61 +818,55 @@ function showMessage(text) {
     setTimeout(() => { el.style.opacity = '0'; }, 1000);
 }
 
-function updateHighScores(newScore) {
-    const storageKey = 'hexaflow_scores_v3'; // Versión con tiempo
-    let scores = JSON.parse(localStorage.getItem(storageKey) || '[]');
+function saveScore(isWin) {
+    if (!isWin) return; // Solo guardamos victorias en el ranking de eficiencia
 
-    if (newScore !== undefined) {
-        // Calcular tiempo de juego
-        const endTime = Date.now();
-        const timeSeconds = state.startTime ? Math.floor((endTime - state.startTime) / 1000) : 0;
+    const storageKey = 'hexaflow_scores_v4';
+    let allScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
 
-        scores.push({
-            date: new Date().toLocaleDateString(),
-            score: newScore,
-            difficulty: state.difficulty,
-            moves: state.moves,
-            time: timeSeconds,
-            difficultyName: DIFFICULTY_NAMES[state.difficulty]
-        });
-        // Ordenar por dificultad, luego por puntuación (mayor es mejor)
-        scores.sort((a, b) => {
-            if (b.difficulty !== a.difficulty) return b.difficulty - a.difficulty;
-            return b.score - a.score;
-        });
-        // Guardar top 5 por cada nivel
-        const grouped = {};
-        scores.forEach(s => {
-            if (!grouped[s.difficulty]) grouped[s.difficulty] = [];
-            if (grouped[s.difficulty].length < 5) {
-                grouped[s.difficulty].push(s);
-            }
-        });
-        scores = Object.values(grouped).flat();
-        localStorage.setItem(storageKey, JSON.stringify(scores));
-    }
+    if (!allScores[state.difficulty]) allScores[state.difficulty] = [];
 
-    const list = document.getElementById('scores-list');
-    const filteredScores = scores.filter(s => s.difficulty === state.difficulty).slice(0, 5);
+    const endTime = Date.now();
+    const timeSeconds = state.startTime ? Math.floor((endTime - state.startTime) / 1000) : 0;
 
-    // Formatear tiempo como mm:ss
-    const formatTime = (sec) => {
-        const m = Math.floor(sec / 60);
-        const s = sec % 60;
-        return `${m}:${s.toString().padStart(2, '0')}`;
+    const newEntry = {
+        moves: state.moves,
+        time: timeSeconds,
+        date: new Date().toLocaleDateString(),
+        score: state.score // Guardamos score por curiosidad, pero no rankea
     };
 
-    list.innerHTML = filteredScores.map((s, i) => `
-        <div class="score-row">
-            <span>#${i + 1}</span>
-            <span>${s.score} pts</span>
-            <span style="color: #fbbf24;">${formatTime(s.time || 0)}</span>
-            <span style="color: #64748b; font-size: 0.6rem">${s.date}</span>
-        </div>
-    `).join('') || '<div style="text-align:center">Sin records para este nivel</div>';
+    allScores[state.difficulty].push(newEntry);
+
+    // CRITERIO DE RANKING:
+    // 1. Menos Movimientos (Ascendente)
+    // 2. Menos Tiempo (Ascendente)
+    allScores[state.difficulty].sort((a, b) => {
+        if (a.moves !== b.moves) return a.moves - b.moves;
+        return a.time - b.time;
+    });
+
+    // Mantener solo top 5
+    allScores[state.difficulty] = allScores[state.difficulty].slice(0, 5);
+
+    localStorage.setItem(storageKey, JSON.stringify(allScores));
+
+    return newEntry; // Retornamos para mostrar en modal
 }
 
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// (Función updateHighScores anterior ELIMINADA y reemplazada por showRankingModal y saveScore)
+
 function render() {
+    // Actualizar rotación suave
+    if (state.keysPressed.ArrowLeft) state.rotation -= 2;
+    if (state.keysPressed.ArrowRight) state.rotation += 2;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const rect = canvas.getBoundingClientRect();
 
@@ -734,6 +888,9 @@ function render() {
         chip.update();
         chip.draw(ctx, state.rotation, rect.width, rect.height);
     });
+
+    // PASADA 2.5: Dibujar efectos de eliminacion (detras de UI, sobre tablero)
+    state.effects = state.effects.filter(fx => fx.draw(ctx, state.rotation, rect.width / 2, rect.height / 2));
 
     // PASADA 3: Dibujar indicadores de flujo (flechas) si hay preview activo
     if (state.hoveredCell && state.selectedPileIndex !== null && !state.isAnimating) {
@@ -759,369 +916,290 @@ function render() {
 }
 
 // LÓGICA DE FLUJO MEJORADA
-async function processMove(q, r) {
+// LÓGICA DE FLUJO: IMPLEMENTACIÓN DEL DIAGRAMA
+// LÓGICA DE FLUJO: IMPLEMENTACIÓN CON CASCADA (QUEUE)
+async function processMove(startQ, startR) {
     if (state.isAnimating) return;
     state.isAnimating = true;
+
+    // Asegurar enteros
+    startQ = Math.round(startQ);
+    startR = Math.round(startR);
+
+    console.log(`[ProcessMove] Inicio Turno en ${startQ},${startR}`);
+
+    // Cola de celdas pendientes de revisar
+    // Usamos strings "q,r" para facilitar manejo
+    let queue = [`${startQ},${startR}`];
+
+    let safetyCounter = 0;
+    const MAX_STEPS = 50; // Seguridad contra loops infinitos
+    const ANIM_DURATION = 350; // Un poco más rápido para que la cascada no sea eterna
 
     try {
         state.stats.currentCombo = 0;
 
-        const ANIM_DURATION = 300; // Animación más lenta para apreciarla
-        let totalMoved = 0;
+        while (queue.length > 0 && safetyCounter < MAX_STEPS) {
+            safetyCounter++;
 
-        // FASE 1: Volcar fichas a las vecinas del mismo color (sin límite)
-        const placedCell = state.board.get(`${q},${r}`);
-        if (placedCell && placedCell.chips.length > 0) {
-            await spreadToNeighbors(q, r, ANIM_DURATION);
-        }
+            // Extraer siguiente celda a procesar
+            const currentKey = queue.shift();
+            const [q, r] = currentKey.split(',').map(Number);
 
-        // FASE 2: Cascada continua - procesar todos los flujos hasta estabilizar
-        let needsProcessing = true;
-        let loopCount = 0;
-        const MAX_LOOPS = 50; // Evitar bucles infinitos
+            // Verificar si la celda aun tiene fichas
+            const cell = state.board.get(currentKey);
+            if (!cell || cell.chips.length === 0) {
+                continue; // Celda vacía, nada que hacer
+            }
 
-        while (needsProcessing && loopCount < MAX_LOOPS) {
-            needsProcessing = false;
-            loopCount++;
+            const topColor = cell.chips[cell.chips.length - 1];
+            console.log(`[Step ${safetyCounter}] Procesando ${currentKey} (${topColor})`);
 
-            for (const [key, cell] of state.board) {
-                if (cell.chips.length === 0) continue;
+            // 1. Escanear Vecinos (Scan)
+            const neighbors = getNeighbors(q, r);
+            const matchingNeighbors = [];
 
-                const [curQ, curR] = key.split(',').map(Number);
-                const topColor = cell.chips[cell.chips.length - 1];
-
-                // Buscar el mejor destino para TODAS las fichas del mismo color
-                const target = findBestTarget(curQ, curR, topColor);
-
-                if (target) {
-                    // Contar cuántas fichas del mismo color hay en el tope
-                    const chipsToMove = [];
-                    while (cell.chips.length > 0 && cell.chips[cell.chips.length - 1] === topColor) {
-                        chipsToMove.push(cell.chips.pop());
-                    }
-
-                    // Animar todas las fichas moviéndose juntas
-                    for (let i = 0; i < chipsToMove.length; i++) {
-                        const animChip = new AnimatedChip(curQ, curR, target.q, target.r, chipsToMove[i], ANIM_DURATION);
-                        // Pequeño delay entre cada ficha para efecto visual
-                        animChip.startTime = performance.now() + (i * 30);
-                        state.animatedChips.push(animChip);
-                    }
-
-                    // Esperar la animación del grupo
-                    await new Promise(res => setTimeout(res, ANIM_DURATION + (chipsToMove.length * 30)));
-
-                    // Agregar fichas al destino (en orden inverso para mantener el orden)
-                    const targetCell = state.board.get(`${target.q},${target.r}`);
-                    if (targetCell) {
-                        for (let i = chipsToMove.length - 1; i >= 0; i--) {
-                            targetCell.chips.push(chipsToMove[i]);
-                        }
-                    }
-
-                    totalMoved += chipsToMove.length;
-                    needsProcessing = true;
-
-                    checkEliminations(target.q, target.r, totalMoved);
-                    checkEliminations(curQ, curR, totalMoved);
-                    break;
+            for (const n of neighbors) {
+                const nKey = `${n.q},${n.r}`;
+                const nCell = state.board.get(nKey);
+                if (nCell && nCell.chips.length > 0 && nCell.chips[nCell.chips.length - 1] === topColor) {
+                    matchingNeighbors.push({ q: n.q, r: n.r, key: nKey, cell: nCell });
                 }
+            }
+
+            const neighborCount = matchingNeighbors.length;
+
+            // 2. Lógica de Decisión
+            if (neighborCount > 1) {
+                // CASO MULTI-VECINO -> GATHER (Reunir en Centro)
+                console.log(`  -> Gather ${neighborCount} vecinos hacia ${currentKey}`);
+                await gatherNeighborsToCenter(q, r, matchingNeighbors, topColor, ANIM_DURATION);
+
+                // Las celdas vecinas se modificaron (perdieron fichas), podrían haber revelado nuevo color.
+                // Las agregamos a la cola.
+                matchingNeighbors.forEach(n => {
+                    if (!queue.includes(n.key)) queue.push(n.key);
+                });
+
+                // El centro cambió (ganó fichas). Verificamos Overflow o Distribute.
+
+                // Recalcular centro
+                const { count } = countTopColorChips(cell, topColor);
+                if (count >= 10) {
+                    console.log(`  -> Overflow en ${currentKey}!`);
+                    const elim = eliminateTopColor(cell, topColor);
+                    processScore(elim, true);
+                    state.effects.push(new EliminationEffect(q, r, topColor));
+                    await new Promise(res => setTimeout(res, 300));
+
+                    // Al eliminar, revelamos color de abajo.
+                    if (!queue.includes(currentKey)) queue.push(currentKey);
+
+                } else {
+                    // Si NO explotó, ahora tenemos todo reunido.
+                    // Ya no hay vecinos con ese color (los absorbimos).
+                    // -> Stay (o podríamos intentar distribuir si aparecieran nuevos vecinos, pero no lo harán mágicamente)
+                    console.log(`  -> Gather completado. Centro es isla ahora.`);
+                }
+
+            } else if (neighborCount === 1) {
+                // CASO UNICO VECINO -> MOVE DIRECT (Distribute)
+                const target = matchingNeighbors[0];
+                console.log(`  -> MoveDirect hacia ${target.key}`);
+
+                await distributeCenterToTarget(q, r, target, topColor, ANIM_DURATION);
+
+                // Current perdió fichas (quizas destapó nuevo color). Re-encolar current.
+                if (!queue.includes(currentKey)) queue.push(currentKey);
+
+                // Target ganó fichas. Re-encolar target para que busque su camino (CASCADA).
+                if (!queue.includes(target.key)) queue.push(target.key);
+
+                // Verificar eliminación en target INMEDIATAMENTE visualmente
+                await checkEliminationAt(target.q, target.r);
+
+            } else {
+                // CASO 0 VECINOS -> STAY
+                console.log(`  -> Stay (0 matching neighbors)`);
+                // No re-encolamos current.
+            }
+
+            // Pausa entre pasos de la cascada
+            if (queue.length > 0) {
+                await new Promise(r => setTimeout(r, 100));
             }
         }
     } catch (error) {
-        console.error("Error crítico en processMove:", error);
+        console.error("Error CRÍTICO en processMove:", error);
+        // Intentar recuperar estado visual
+        canvas.style.opacity = 1;
     } finally {
+        console.log(`[ProcessMove] Finalizado.`);
+
         state.isAnimating = false;
         checkGameOver();
     }
 }
 
-// FASE 1: Al colocar pila, agrupar TODAS las fichas del mismo color de centro+vecinas en la más alta
-async function spreadToNeighbors(centerQ, centerR, duration) {
-    const centerCell = state.board.get(`${centerQ},${centerR}`);
-    if (!centerCell || centerCell.chips.length === 0) return;
+// Retorna el target dominante de una lista de candidatos
+function selectDominantTarget(candidates) {
+    if (candidates.length === 0) return null;
+    let best = candidates[0];
+    let maxSame = -1;
+    let maxTotal = -1;
 
-    const neighbors = getNeighbors(centerQ, centerR);
-    let totalMoved = 0;
+    for (const cand of candidates) {
+        if (!cand.cell || cand.cell.chips.length === 0) continue;
 
-    // Procesar cada color del tope de la pila colocada
-    let continueProcessing = true;
-    let safetyLoop = 0;
+        const topColor = cand.cell.chips[cand.cell.chips.length - 1];
+        const sameCount = countTopColorChips(cand.cell, topColor).count;
+        const total = cand.cell.chips.length;
 
-    // Safety loop para evitar congelamientos
-    while (continueProcessing && centerCell.chips.length > 0 && safetyLoop < 100) {
-        safetyLoop++;
-        continueProcessing = false;
-        const currentColor = centerCell.chips[centerCell.chips.length - 1];
-
-        // 1. Identificar TODAS las celdas participantes (Centro + Vecinas con match)
-        const participatingCells = [];
-
-        // Revisar Centro
-        if (centerCell.chips.length > 0 && centerCell.chips[centerCell.chips.length - 1] === currentColor) {
-            let count = 0;
-            // Contar cuántas fichas consecutivas de este color hay
-            for (let i = centerCell.chips.length - 1; i >= 0 && centerCell.chips[i] === currentColor; i--) count++;
-            participatingCells.push({ q: centerQ, r: centerR, cell: centerCell, sameColorCount: count, isCenter: true });
-        }
-
-        // Revisar Vecinas
-        for (const n of neighbors) {
-            const nKey = `${n.q},${n.r}`;
-            if (!state.board.has(nKey)) continue;
-            const nCell = state.board.get(nKey);
-            if (nCell.chips.length === 0) continue;
-
-            if (nCell.chips[nCell.chips.length - 1] === currentColor) {
-                let count = 0;
-                for (let i = nCell.chips.length - 1; i >= 0 && nCell.chips[i] === currentColor; i--) count++;
-                participatingCells.push({ q: n.q, r: n.r, cell: nCell, sameColorCount: count, isCenter: false });
+        if (sameCount > maxSame) {
+            maxSame = sameCount;
+            maxTotal = total;
+            best = cand;
+        } else if (sameCount === maxSame) {
+            if (total > maxTotal) {
+                maxTotal = total;
+                best = cand;
             }
-        }
-
-        // Contar vecinos reales (no centro)
-        const neighborsWithColor = participatingCells.filter(pc => !pc.isCenter);
-
-        // Si hay vecinos involucrados (o centro + vecinos)
-        if (participatingCells.length > 1) {
-
-            // FASE A: LÓGICA DE 2 PASOS (SOLO SI HAY MÁS DE 1 VECINO)
-            if (neighborsWithColor.length > 1) {
-                // PASO 1: Determinar quién será el DESTINO FINAL (Target)
-                participatingCells.sort((a, b) => {
-                    if (b.sameColorCount !== a.sameColorCount) return b.sameColorCount - a.sameColorCount;
-                    return b.cell.chips.length - a.cell.chips.length;
-                });
-                const target = participatingCells[0];
-
-                // PASO 2: ANIMACIÓN 1 - REUNIR EN EL CENTRO (Gather)
-                const gatheredChips = [];
-                const neighborsToEmpty = neighborsWithColor;
-
-                if (neighborsToEmpty.length > 0) {
-                    const animPromises = [];
-                    let animIndex = 0;
-
-                    for (const source of neighborsToEmpty) {
-                        const chipsToMove = [];
-                        while (source.cell.chips.length > 0 &&
-                            source.cell.chips[source.cell.chips.length - 1] === currentColor) {
-                            chipsToMove.push(source.cell.chips.pop());
-                        }
-                        gatheredChips.push(...chipsToMove);
-
-                        for (let j = 0; j < chipsToMove.length; j++) {
-                            const animChip = new AnimatedChip(
-                                source.q, source.r,
-                                centerQ, centerR,
-                                chipsToMove[j],
-                                duration
-                            );
-                            animChip.startTime = performance.now() + (animIndex * 30);
-                            state.animatedChips.push(animChip);
-                            animIndex++;
-                        }
-                    }
-                    await new Promise(res => setTimeout(res, duration + (animIndex * 30) + 50));
-                }
-
-                // Agregar las fichas recolectadas al centro LÓGICAMENTE
-                // (Visualmente ya llegaron)
-                for (const chip of gatheredChips) {
-                    centerCell.chips.push(chip);
-                }
-                totalMoved += gatheredChips.length;
-
-                // PASO 2.5: VERIFICAR SI HAY SUPERÁVIT EN EL CENTRO (>= 10)
-                let countInCenter = 0;
-                for (let i = centerCell.chips.length - 1; i >= 0 && centerCell.chips[i] === currentColor; i--) {
-                    countInCenter++;
-                }
-
-                if (countInCenter >= 10) {
-                    // CONDICIÓN ESPECIAL: SI SE JUNTAN >= 10, SE ELIMINAN AQUÍ.
-                    // NO VIAJAN AL TARGET.
-                    checkEliminations(centerQ, centerR, totalMoved);
-                    // Si se eliminaron, habrán desaparecido del array.
-                    // Si no (por alguna razón rara), seguirían ahí.
-
-                    // Aseguramos que si se eliminaron, continueProcessing dependa de si quedan fichas (de otro color)
-                    continueProcessing = centerCell.chips.length > 0;
-                }
-                else {
-                    // SI NO SE ELIMINAN (Son < 10), ENTONCES VIAJAN AL TARGET
-
-                    if (target.isCenter) {
-                        // El centro YA era el target, y no llegaron a 10. Se quedan aquí.
-                        checkEliminations(centerQ, centerR, totalMoved);
-                        continueProcessing = centerCell.chips.length > 0;
-                    }
-                    else {
-                        // PASO 3: ANIMACIÓN 2 - DISTRIBUIR (MOVER TODO DEL CENTRO AL TARGET)
-                        const centerChipsToMove = [];
-                        while (centerCell.chips.length > 0 &&
-                            centerCell.chips[centerCell.chips.length - 1] === currentColor) {
-                            centerChipsToMove.push(centerCell.chips.pop());
-                        }
-
-                        // Reordenar para vuelo
-                        const chipsFromCenterOriginalOrder = centerChipsToMove.reverse();
-                        const finalBlock = [...chipsFromCenterOriginalOrder];
-                        // Nota: gatheredChips ya fueron pusheadas al centerCell y popeadas recién.
-                        // Así que 'finalBlock' contiene TODO lo que hay que mover.
-
-                        let animIndex = 0;
-                        for (const chip of finalBlock) {
-                            const animChip = new AnimatedChip(
-                                centerQ, centerR,
-                                target.q, target.r,
-                                chip,
-                                duration
-                            );
-                            animChip.startTime = performance.now() + (animIndex * 30);
-                            state.animatedChips.push(animChip);
-                            animIndex++;
-                        }
-
-                        await new Promise(res => setTimeout(res, duration + (animIndex * 30) + 50));
-
-                        for (const chip of finalBlock) {
-                            target.cell.chips.push(chip);
-                        }
-
-                        totalMoved += finalBlock.length;
-                        checkEliminations(target.q, target.r, totalMoved);
-                        continueProcessing = centerCell.chips.length > 0;
-                    }
-                }
-            }
-            // FASE B: LÓGICA DE 1 PASO (Directa) - SOLO 1 VECINO
-            else {
-                participatingCells.sort((a, b) => {
-                    if (b.sameColorCount !== a.sameColorCount) return b.sameColorCount - a.sameColorCount;
-                    return b.cell.chips.length - a.cell.chips.length;
-                });
-                const target = participatingCells[0];
-                const sources = participatingCells.filter(pc => pc !== target);
-
-                // Mover fichas de source a target directamente
-                for (const source of sources) {
-                    const chipsToMove = [];
-                    while (source.cell.chips.length > 0 &&
-                        source.cell.chips[source.cell.chips.length - 1] === currentColor) {
-                        chipsToMove.push(source.cell.chips.pop());
-                    }
-
-                    if (chipsToMove.length > 0) {
-                        for (let j = 0; j < chipsToMove.length; j++) {
-                            const animChip = new AnimatedChip(
-                                source.q, source.r,
-                                target.q, target.r,
-                                chipsToMove[j],
-                                duration
-                            );
-                            animChip.startTime = performance.now() + (j * 35);
-                            state.animatedChips.push(animChip);
-                        }
-                        await new Promise(res => setTimeout(res, duration + (chipsToMove.length * 35)));
-
-                        for (let j = chipsToMove.length - 1; j >= 0; j--) {
-                            target.cell.chips.push(chipsToMove[j]);
-                        }
-                        totalMoved += chipsToMove.length;
-                    }
-                }
-
-                checkEliminations(target.q, target.r, totalMoved);
-                continueProcessing = centerCell.chips.length > 0;
-            }
-        }
-        else if (participatingCells.length === 1 && participatingCells[0].isCenter) {
-            // Solo el centro tiene este color.
         }
     }
+    return best;
 }
 
-// Encuentra el mejor destino para fichas de un color
-function findBestTarget(q, r, topColor) {
-    const neighbors = getNeighbors(q, r);
-    let bestTarget = null;
-    let maxSameColor = -1;
-    let maxTotalChips = -1;
+// Fase Gather: Mover ships de Neighbors -> Center
+async function gatherNeighborsToCenter(centerQ, centerR, neighbors, color, duration) {
+    const centerKey = `${centerQ},${centerR}`;
+    const centerCell = state.board.get(centerKey);
+    const totalMovedChips = [];
 
+    // Extraer fichas LOGICAMENTE antes de animar
     for (const n of neighbors) {
-        const nKey = `${n.q},${n.r}`;
-        if (state.board.has(nKey)) {
-            const nCell = state.board.get(nKey);
-            if (nCell.chips.length > 0 && nCell.chips[nCell.chips.length - 1] === topColor) {
-                const sameColorCount = nCell.chips.filter(c => c === topColor).length;
-
-                if (sameColorCount > maxSameColor) {
-                    maxSameColor = sameColorCount;
-                    maxTotalChips = nCell.chips.length;
-                    bestTarget = { q: n.q, r: n.r };
-                } else if (sameColorCount === maxSameColor && nCell.chips.length > maxTotalChips) {
-                    maxTotalChips = nCell.chips.length;
-                    bestTarget = { q: n.q, r: n.r };
-                }
+        const chipsToMove = [];
+        while (n.cell.chips.length > 0 && n.cell.chips[n.cell.chips.length - 1] === color) {
+            chipsToMove.push(n.cell.chips.pop());
+        }
+        if (chipsToMove.length > 0) {
+            // Animaciones
+            for (let i = 0; i < chipsToMove.length; i++) {
+                const anim = new AnimatedChip(n.q, n.r, centerQ, centerR, chipsToMove[i], duration);
+                // Todos inician casi simultaneo
+                anim.startTime = performance.now() + (i * 20);
+                state.animatedChips.push(anim);
             }
+            totalMovedChips.push(chipsToMove);
         }
     }
-    return bestTarget;
+
+    if (totalMovedChips.length === 0) return;
+
+    // Esperar a que lleguen visualmente (+ margen)
+    await new Promise(r => setTimeout(r, duration + 200));
+
+    // Lógica: Añadir al centro
+    for (const batch of totalMovedChips) {
+        for (let i = batch.length - 1; i >= 0; i--) {
+            centerCell.chips.push(batch[i]);
+        }
+    }
 }
 
-function checkEliminations(q, r, totalMoved) {
+// Fase Distribute: Mover chips de Center -> Target
+async function distributeCenterToTarget(centerQ, centerR, target, color, duration) {
+    const centerKey = `${centerQ},${centerR}`;
+    const centerCell = state.board.get(centerKey);
+
+    // Extraer todo el bloque del color
+    const chipsToMove = [];
+    while (centerCell.chips.length > 0 && centerCell.chips[centerCell.chips.length - 1] === color) {
+        chipsToMove.push(centerCell.chips.pop());
+    }
+
+    if (chipsToMove.length === 0) return;
+
+    // Animar
+    for (let i = 0; i < chipsToMove.length; i++) {
+        const anim = new AnimatedChip(centerQ, centerR, target.q, target.r, chipsToMove[i], duration);
+        anim.startTime = performance.now() + (i * 30);
+        state.animatedChips.push(anim);
+    }
+
+    await new Promise(r => setTimeout(r, duration + (chipsToMove.length * 30)));
+
+    // Lógica: poner en target
+    const targetCell = state.board.get(target.key || `${target.q},${target.r}`);
+    if (targetCell) {
+        for (let i = chipsToMove.length - 1; i >= 0; i--) {
+            targetCell.chips.push(chipsToMove[i]);
+        }
+    }
+}
+
+// Utilidad: Contar fichas top del mismo color
+function countTopColorChips(cell, color) {
+    let count = 0;
+    if (!cell || !cell.chips) return { count: 0 };
+    for (let i = cell.chips.length - 1; i >= 0; i--) {
+        if (cell.chips[i] === color) count++;
+        else break;
+    }
+    return { count };
+}
+
+// Utilidad: Eliminar top color, retorna cuantos
+function eliminateTopColor(cell, color) {
+    let removed = 0;
+    while (cell.chips.length > 0 && cell.chips[cell.chips.length - 1] === color) {
+        cell.chips.pop();
+        removed++;
+    }
+    return removed;
+}
+
+// Procesar Puntuación
+function processScore(count, isCenterSuperavit) {
+    state.stats.totalEliminated += count;
+    state.stats.currentCombo++;
+    if (state.stats.currentCombo > state.stats.bestCombo) {
+        state.stats.bestCombo = state.stats.currentCombo;
+    }
+
+    let points = count;
+    // Bonus por superavit en centro
+    if (isCenterSuperavit) points += 5;
+    if (state.stats.currentCombo > 1) points += (state.stats.currentCombo * 2);
+
+    state.score += points;
+
+    showMessage(`¡+${points} PUNTOS!`);
+    updateStat('score', state.score);
+
+    if (state.score >= state.goal) {
+        gameWin();
+    }
+}
+
+// Wrapper para checkear y ejecutar eliminación en una coordenada dada (Target)
+async function checkEliminationAt(q, r) {
     const key = `${q},${r}`;
     const cell = state.board.get(key);
     if (!cell || cell.chips.length === 0) return;
 
     const topColor = cell.chips[cell.chips.length - 1];
-    let count = 0;
-    // Contar cuántas del mismo color hay consecutivas en el tope
-    for (let i = cell.chips.length - 1; i >= 0; i--) {
-        if (cell.chips[i] === topColor) count++;
-        else break;
-    }
+    const { count } = countTopColorChips(cell, topColor);
 
     if (count >= 10) {
-        // Eliminar SOLO las fichas de ese color superior (máximo 10 o todas las consecutivas)
-        let removed = 0;
-        while (cell.chips.length > 0 && cell.chips[cell.chips.length - 1] === topColor) {
-            cell.chips.pop();
-            removed++;
-        }
-
-        // Actualizar estadísticas
-        state.stats.totalEliminated += removed;
-        state.stats.currentCombo++;
-        if (state.stats.currentCombo > state.stats.bestCombo) {
-            state.stats.bestCombo = state.stats.currentCombo;
-        }
-
-        let points = removed;
-        if (totalMoved > 20) {
-            points += 10;
-            showMessage("¡COMBO x" + state.stats.currentCombo + "!");
-        }
-        state.score += points;
-        scoreEl.innerText = state.score;
-
-        if (state.score >= state.goal) {
-            nextRound();
-        }
+        // Eliminar
+        const elim = eliminateTopColor(cell, topColor);
+        processScore(elim, false);
+        state.effects.push(new EliminationEffect(q, r, topColor));
+        await new Promise(r => setTimeout(r, 300)); // Pausa dramática
     }
 }
 
-function nextRound() {
-    state.round++;
-    state.goal += 300; // Aumentar dificultad
-    state.numColors = Math.min(COLORS.length, 3 + Math.floor(state.round / 2));
-    roundEl.innerText = state.round;
-    goalEl.innerText = state.goal;
-
-    spawnConfetti();
-    showMessage("¡META ALCANZADA! Nivel " + state.round);
-}
+// Función nextRound ELIMINADA
 
 function checkGameOver() {
     let emptyCells = 0;
@@ -1134,29 +1212,41 @@ function checkGameOver() {
     }
 }
 
-function showGameOver() {
+function gameWin() {
+    if (state.isGameOver) return;
     state.isGameOver = true;
 
-    // Verificar si es nuevo récord
-    let scores = JSON.parse(localStorage.getItem('hexaflow_scores') || '[]');
-    const isNewRecord = scores.length === 0 || state.score > (scores[0]?.score || 0);
+    // Guardar Score
+    const entry = saveScore(true);
 
-    // Guardar puntuación
-    updateHighScores(state.score);
+    // UI
+    document.getElementById('modal-title').innerText = "🏆 ¡NIVEL COMPLETADO!";
+    document.getElementById('final-moves').innerText = state.moves;
+    const timeTotal = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
+    document.getElementById('final-time').innerText = formatTime(timeTotal);
 
-    // Actualizar UI del modal
-    document.getElementById('final-score').innerText = state.score;
-    document.getElementById('final-round').innerText = state.round;
     document.getElementById('best-combo').innerText = state.stats.bestCombo;
     document.getElementById('total-eliminated').innerText = state.stats.totalEliminated;
 
-    // Mostrar indicador de nuevo récord
-    const recordEl = document.getElementById('new-record');
-    recordEl.style.display = isNewRecord ? 'block' : 'none';
-
-    // Mostrar modal con animación
     gameoverModal.classList.add('active');
-    spawnConfetti(); // Confeti dramático
+    spawnConfetti();
+}
+
+function showGameOver() {
+    state.isGameOver = true;
+    // No guardamos score en game over (no completó el nivel)
+
+    document.getElementById('modal-title').innerText = "💀 GAME OVER";
+    document.getElementById('final-moves').innerText = state.moves;
+    const timeTotal = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
+    document.getElementById('final-time').innerText = formatTime(timeTotal);
+
+    // ... stats ...
+    document.getElementById('best-combo').innerText = state.stats.bestCombo;
+    document.getElementById('total-eliminated').innerText = state.stats.totalEliminated;
+
+    // ...
+    gameoverModal.classList.add('active');
 }
 
 function restartGame() {
@@ -1165,44 +1255,107 @@ function restartGame() {
     resetGame();
 }
 
+// Auxiliar para animar stats
+function updateStat(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+        // En caso de que el texto no sea numero puro (ej: inicializacion), manejamos
+        const current = parseInt(el.innerText) || 0;
+        if (current !== value) {
+            el.innerText = value;
+            el.classList.remove('changed');
+            void el.offsetWidth; // Trigger reflow
+            el.classList.add('changed');
+        } else {
+            // Si es igual, aseguramos texto correcto por si acaso
+            el.innerText = value;
+        }
+    }
+}
+
 function resetGame() {
     state.score = 0;
     state.round = 1;
-    state.goal = 100;
+
+    // Configurar Meta: Si el usuario movió el slider, usamos ese valor? 
+    // Por simplicidad, leemos el valor actual del slider
+    const goalSlider = document.getElementById('goal-range');
+    if (goalSlider) {
+        state.goal = parseInt(goalSlider.value);
+    } else {
+        state.goal = 100 + (state.difficulty * 20);
+    }
+
     state.numColors = 3;
     state.mulligans = 3;
     state.moves = 0;
-    state.startTime = Date.now(); // Iniciar cronómetro
+    state.startTime = Date.now();
     state.stats = { bestCombo: 0, currentCombo: 0, totalEliminated: 0 };
-    scoreEl.innerText = "0";
-    roundEl.innerText = "1";
-    goalEl.innerText = "100";
-    mulliganBtn.innerText = "Mulligan (3)";
-    mulliganBtn.disabled = false;
-    document.getElementById('moves-count').innerText = "0";
+
+    updateStat('score', 0);
+    updateStat('goal', state.goal);
+    // roundEl eliminado
+
+    mulliganBtn.innerHTML = `<span class="btn-icon">↺</span> Otra Tanda (3)`;
+    updateStat('moves-count', 0);
+
+    // IMPORTANTE: Resetear flags de estado
+    state.isGameOver = false;
+    state.isAnimating = false;
+    // Ocultar modal si estaba abierto
+    gameoverModal.classList.remove('active');
+
+    state.rotation = 0;
     initBoard();
     refillPlayerPiles();
-    updateHighScores(); // Mostrar ranking del nivel actual
+    // Ranking no se actualiza al inicio
 }
 
 // CONFIGURACIÓN
 function toggleConfig() {
     state.isConfigOpen = !state.isConfigOpen;
-    configModal.classList.toggle('active', state.isConfigOpen);
+    document.getElementById('config-modal').classList.toggle('active', state.isConfigOpen);
     updateDifficultyButtons();
 }
 
 function updateDifficultyButtons() {
-    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    document.querySelectorAll('.segment-btn').forEach(btn => {
         const diff = parseInt(btn.dataset.difficulty);
-        btn.classList.toggle('selected', diff === state.difficulty);
+        btn.classList.toggle('active', diff === state.difficulty);
     });
+
+    // Actualizar texto descriptivo
+    const texts = {
+        2: "Radio 2 • 19 celdas",
+        3: "Radio 3 • 37 celdas",
+        4: "Radio 4 • 61 celdas"
+    };
+    const descEl = document.getElementById('difficulty-description');
+    if (descEl) descEl.innerText = texts[state.difficulty] || "";
 }
 
 function setDifficulty(level) {
     state.difficulty = level;
     hexRadius = level;
     updateDifficultyButtons();
+
+    // Ajustar Meta sugerida al cambiar dificultad (opcional)
+    const suggestedGoal = 100 + (level * 50);
+    const goalSlider = document.getElementById('goal-range');
+    if (goalSlider) {
+        goalSlider.value = suggestedGoal;
+        updateGoalLabel(suggestedGoal);
+    }
+}
+
+function setGoal(value) {
+    // Solo actualiza UI temporal, se aplica real en resetGame
+    // O podríamos actualizar state.goal en tiempo real si el juego no ha empezado?
+    // Mejor dejar que resetGame lo lea.
+}
+
+function updateGoalLabel(value) {
+    document.getElementById('goal-label').innerText = value;
 }
 
 function setMaxHeight(value) {
@@ -1213,15 +1366,15 @@ function updateHeightLabel(value) {
     document.getElementById('height-label').innerText = value;
 }
 
-// Nuevo juego en el MISMO nivel de dificultad
-function newGame() {
+// Unificamos lógica de inicio
+// Unificamos lógica de inicio
+function startGame() {
     toggleConfig();
     resetGame();
 }
 
-// Iniciar juego con NUEVO nivel de dificultad
-function startGame() {
-    toggleConfig();
+function newGame() {
+    // Reinicio rápido sin cerrar/abrir config
     resetGame();
 }
 
@@ -1238,8 +1391,13 @@ window.addEventListener('resize', resize);
 
 window.addEventListener('keydown', (e) => {
     if (state.isAnimating || state.isHelpOpen) return;
-    if (e.key === 'ArrowLeft') state.rotation -= 60;
-    if (e.key === 'ArrowRight') state.rotation += 60;
+    if (e.key === 'ArrowLeft') state.keysPressed.ArrowLeft = true;
+    if (e.key === 'ArrowRight') state.keysPressed.ArrowRight = true;
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft') state.keysPressed.ArrowLeft = false;
+    if (e.key === 'ArrowRight') state.keysPressed.ArrowRight = false;
 });
 
 canvas.addEventListener('mousedown', async (e) => {
@@ -1275,7 +1433,7 @@ canvas.addEventListener('mousedown', async (e) => {
             state.selectedPileIndex = null;
             state.hoveredCell = null; // Limpiar hover
             state.moves++; // Incrementar contador de movimientos
-            document.getElementById('moves-count').innerText = state.moves;
+            updateStat('moves-count', state.moves);
 
             // Cada 10 movimientos, añadir un color (máximo 6)
             if (state.moves % 10 === 0 && state.numColors < COLORS.length) {
@@ -1322,6 +1480,7 @@ canvas.addEventListener('mouseleave', () => {
 // START
 resize();
 initBoard();
-refillPlayerPiles();
-updateHighScores();
-render();
+// setDifficulty(2); // Inicia en fácil por defecto, ya lo hace initBoard con state.difficulty
+resetGame(); // Inicia valores por defecto
+// saveScore no se llama al inicio
+requestAnimationFrame(render); // ¡IMPORTANTE! Iniciar bucle de renderizado
