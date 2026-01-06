@@ -37,25 +37,36 @@ flowchart TD
     CheckCenter -- Sí --> GetColor[Obtener color superior: TopColor]
     
     GetColor --> Scan[Escanear Vecinos + Centro]
-    Scan --> FindMatches{¿Vecinos coinciden con TopColor?}
+    Scan --> FindMatches{¿Vecinos con TopColor?}
     
-    FindMatches -- Sí (Grupo encontrado) --> SelectTarget[Seleccionar Target: Pila con MÁS fichas de ese color]
-    SelectTarget --> Move[Mover fichas coincidentes de Otros -> Target]
+    FindMatches -- Sí --> CountNeighbors{¿Cuántos Vecinos?}
     
-    FindMatches -- No (Solo Centro) --> SearchEmpty[Buscar vecino vacío o compatible]
-    SearchEmpty --> FoundEmpty{¿Encontrado?}
+    %% CASO INDIRECTO: Múltiples Vecinos
+    CountNeighbors -- "> 1 vecino" --> SelectTargetA[Target = Dominante]
+    SelectTargetA --> Gather[Fase 1: Reunir Vecinos en Centro]
+    Gather --> CheckOverflow{¿Centro tiene >= 10?}
     
-    FoundEmpty -- Sí --> MoveToEmpty[Mover fichas Centro -> Vecino]
-    FoundEmpty -- No --> Stay[Fichas se quedan en Centro]
+    CheckOverflow -- Sí (Superávit) --> ElimCenter[ELIMINAR fichas en Centro]
+    ElimCenter --> NextColor
     
-    Move --> CheckElim[¿Target tiene >= 10 fichas?]
-    MoveToEmpty --> CheckElim
+    CheckOverflow -- No --> Distribute[Fase 2: Distribuir Centro -> Target]
+    Distribute --> CheckElimTarget
+    
+    %% CASO DIRECTO: 1 Vecino
+    CountNeighbors -- "1 vecino" --> SelectTargetB[Target = Dominante]
+    SelectTargetB --> MoveDirect[Animación Directa: Origen -> Destino]
+    MoveDirect --> CheckElimTarget
+    
+    %% CASO FALLBACK
+    FindMatches -- No (Solo Centro) --> Stay[Fichas se quedan en Centro]
     Stay --> NextColor
     
-    CheckElim -- Sí --> Clear[ELIMINAR fichas y dar Puntos]
-    CheckElim -- No --> NextColor[¿Quedan fichas en Centro?]
+    %% PROCESO COMÚN
+    CheckElimTarget{¿Target >= 10?}
+    CheckElimTarget -- Sí --> Clear[ELIMINAR fichas y dar Puntos]
+    CheckElimTarget -- No --> NextColor
     
-    Clear --> NextColor
+    Clear --> NextColor[¿Quedan fichas en Centro?]
     NextColor -- Sí --> GetColor
     NextColor -- No --> End
 ```
