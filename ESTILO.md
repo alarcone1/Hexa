@@ -2,6 +2,13 @@
 
 Este documento define las guías de estilo visual implementadas en el juego **HexaFlow**. El diseño busca una estética moderna, etérea y sofisticada ("App Premium"), utilizando desenfoques, transparencias y contrastes de neón sobre fondo oscuro.
 
+## 🎨 Iconografía (Lucide)
+Para mantener una consistencia minimalista y geométrica, utilizamos **Lucide Icons** (versión light/outline).
+- **Librería**: `lucide@latest`
+- **Estilo**: Stroke width 2px, sin relleno.
+- **Implementación**: `<i data-lucide="nombre-icono"></i>`
+- **Renderizado**: `lucide.createIcons()` al cargar.
+
 ## 1. Paleta de Colores
 
 El esquema de colores utiliza tonos oscuros profundos para el fondo y colores brillantes y saturados para acentos e interacción.

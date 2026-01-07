@@ -60,23 +60,38 @@ class Particle {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.size = Math.random() * 5 + 5;
-        this.vx = (Math.random() - 0.5) * 10;
-        this.vy = (Math.random() - 0.5) * 10 - 5;
+        this.size = Math.random() * 6 + 4; // Variedad de tamaños
+        this.vx = (Math.random() - 0.5) * 4; // Movimiento lateral suave
+        this.vy = Math.random() * 5 + 2; // Velocidad de caída inicial
         this.life = 1.0;
-        this.gravity = 0.2;
+        this.gravity = 0.05; // Gravedad ligera
+        this.rotation = Math.random() * 360;
+        this.rotationSpeed = (Math.random() - 0.5) * 10;
     }
     update() {
         this.x += this.vx;
         this.y += this.vy;
         this.vy += this.gravity;
-        this.life -= 0.02;
+        this.life -= 0.004; // Durar ~4-5 segundos (60fps)
     }
     draw(ctx) {
+        ctx.save();
         ctx.globalAlpha = Math.max(0, this.life);
+        ctx.translate(this.x, this.y);
+        this.rotation += this.rotationSpeed;
+        ctx.rotate(this.rotation * Math.PI / 180);
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.size, this.size);
-        ctx.globalAlpha = 1.0;
+
+        // Formas variadas: rectangulos y circulos
+        if (this.size > 7) {
+            ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
     }
 }
 
@@ -182,8 +197,16 @@ class EliminationEffect {
 }
 
 function spawnConfetti() {
-    for (let i = 0; i < 100; i++) {
-        state.particles.push(new Particle(canvas.width / 2, canvas.height / 2, COLORS[Math.floor(Math.random() * COLORS.length)]));
+    // "Lluvia" de confeti masiva
+    for (let i = 0; i < 600; i++) {
+        // Posición aleatoria en ancho
+        const x = Math.random() * canvas.width;
+        // Esparcir verticalmente para que caigan durante un rato
+        const y = -100 - Math.random() * 800;
+
+        // Solo colores DESBLOQUEADOS
+        const color = COLORS[Math.floor(Math.random() * state.numColors)];
+        state.particles.push(new Particle(x, y, color));
     }
 }
 
@@ -588,17 +611,37 @@ function showRankingFromModal() {
     showRankingModal();
 }
 
-function showRankingModal() {
+// Mostrar Ranking con soporte de Tabs
+function showRankingModal(forceDifficulty = null) {
     const modal = document.getElementById('ranking-modal');
-    const label = document.getElementById('ranking-difficulty-label');
     const container = document.getElementById('full-scores-list');
 
-    label.innerText = `DIFICULTAD: ${DIFFICULTY_NAMES[state.difficulty].toUpperCase()}`;
+    // Dificultad a mostrar: la pasada por argumento o la actual del estado
+    const showDiff = forceDifficulty !== null ? forceDifficulty : state.difficulty;
+
+    // Renderizar Tabs de Dificultad
+    const difficultyControlHtml = `
+        <div class="difficulty-segmented-control" style="margin-bottom: 20px;">
+            <button class="segment-btn ${showDiff === 2 ? 'active' : ''}" onclick="showRankingModal(2)">FÁCIL</button>
+            <button class="segment-btn ${showDiff === 3 ? 'active' : ''}" onclick="showRankingModal(3)">NORMAL</button>
+            <button class="segment-btn ${showDiff === 4 ? 'active' : ''}" onclick="showRankingModal(4)">DIFÍCIL</button>
+        </div>
+    `;
+
+    // Reemplazar el label anterior con los tabs
+    const headerContainer = document.getElementById('ranking-header-container'); // Necesitaremos este ID en HTML
+    if (headerContainer) {
+        headerContainer.innerHTML = difficultyControlHtml;
+    } else {
+        // Fallback si no hemos actualizado HTML aún (para prevenir erorres durante dev)
+        const label = document.getElementById('ranking-difficulty-label');
+        if (label) label.style.display = 'none'; // ocultar viejo label
+    }
 
     // Obtener scores
-    const storageKey = 'hexaflow_scores_v4'; // Nueva versión de scores
+    const storageKey = 'hexaflow_scores_v4';
     let allScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
-    let levelScores = allScores[state.difficulty] || [];
+    let levelScores = allScores[showDiff] || [];
 
     // Renderizar tabla
     if (levelScores.length === 0) {
@@ -610,12 +653,23 @@ function showRankingModal() {
             if (i === 1) medalClass = 'silver';
             if (i === 2) medalClass = 'bronze';
 
+            // Extraer hora si existe timestamp, sino fallback
+            let dateStr = s.date;
+            let timeStr = "--:--";
+
+            if (s.timestamp) {
+                const d = new Date(s.timestamp);
+                dateStr = d.toLocaleDateString();
+                timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
             return `
             <div class="ranking-row ${medalClass}">
                 <span>${i + 1}</span>
                 <span>${s.moves}</span>
                 <span>${formatTime(s.time)}</span>
-                <span style="font-size: 0.8em; opacity: 0.7;">${s.date}</span>
+                <span>${dateStr}</span>
+                <span style="font-size: 0.9em; opacity: 0.7;">${timeStr}</span>
             </div>
             `;
         }).join('');
@@ -632,7 +686,7 @@ function resetRankingsConfirm() {
     if (confirm("⚠️ ¿Estás seguro de que quieres borrar TODOS los rankings? Esta acción no se puede deshacer.")) {
         localStorage.removeItem('hexaflow_scores_v4');
         alert("Rankings eliminados.");
-        toggleConfig(); // Cerrar config
+        toggleConfig();
     }
 }
 
@@ -833,7 +887,8 @@ function saveScore(isWin) {
         moves: state.moves,
         time: timeSeconds,
         date: new Date().toLocaleDateString(),
-        score: state.score // Guardamos score por curiosidad, pero no rankea
+        timestamp: Date.now(), // Guardamos timestamp completo para hora
+        score: state.score
     };
 
     allScores[state.difficulty].push(newEntry);
@@ -1173,7 +1228,7 @@ function processScore(count, isCenterSuperavit) {
 
     state.score += points;
 
-    showMessage(`¡+${points} PUNTOS!`);
+    // showMessage(`¡+${points} PUNTOS!`); // Mensaje eliminado por solicitud
     updateStat('score', state.score);
 
     if (state.score >= state.goal) {
@@ -1220,16 +1275,20 @@ function gameWin() {
     const entry = saveScore(true);
 
     // UI
-    document.getElementById('modal-title').innerText = "🏆 ¡NIVEL COMPLETADO!";
-    document.getElementById('final-moves').innerText = state.moves;
-    const timeTotal = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
-    document.getElementById('final-time').innerText = formatTime(timeTotal);
-
-    document.getElementById('best-combo').innerText = state.stats.bestCombo;
-    document.getElementById('total-eliminated').innerText = state.stats.totalEliminated;
-
-    gameoverModal.classList.add('active');
     spawnConfetti();
+
+    // Retrasar modal para ver la celebración
+    setTimeout(() => {
+        document.getElementById('modal-title').innerText = "🏆 ¡NIVEL COMPLETADO!";
+        document.getElementById('final-moves').innerText = state.moves;
+        const timeTotal = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
+        document.getElementById('final-time').innerText = formatTime(timeTotal);
+
+        document.getElementById('best-combo').innerText = state.stats.bestCombo;
+        document.getElementById('total-eliminated').innerText = state.stats.totalEliminated;
+
+        gameoverModal.classList.add('active');
+    }, 5000); // 5 segundos de fiesta antes del modal
 }
 
 function showGameOver() {
@@ -1308,6 +1367,7 @@ function resetGame() {
     state.rotation = 0;
     initBoard();
     refillPlayerPiles();
+    renderActiveColors(); // Resetear barra lateral
     // Ranking no se actualiza al inicio
 }
 
@@ -1438,7 +1498,9 @@ canvas.addEventListener('mousedown', async (e) => {
             // Cada 10 movimientos, añadir un color (máximo 6)
             if (state.moves % 10 === 0 && state.numColors < COLORS.length) {
                 state.numColors++;
-                showMessage(`¡+1 COLOR! Ahora ${state.numColors} colores`);
+                const newCol = COLORS[state.numColors - 1];
+                // Solo añadimos a la barra lateral (animado), sin notificación invasiva
+                addActiveColor(newCol);
             }
 
             refillPlayerPiles();
@@ -1484,3 +1546,44 @@ initBoard();
 resetGame(); // Inicia valores por defecto
 // saveScore no se llama al inicio
 requestAnimationFrame(render); // ¡IMPORTANTE! Iniciar bucle de renderizado
+
+// UI HELPERS FOR ACTIVE COLORS SIDEBAR
+function renderActiveColors() {
+    const list = document.getElementById('active-colors-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const active = COLORS.slice(0, state.numColors);
+    active.forEach(color => addActiveColor(color));
+}
+
+function addActiveColor(color) {
+    const list = document.getElementById('active-colors-list');
+    if (!list) return;
+    const chip = document.createElement('div');
+    chip.className = 'active-color-chip';
+    chip.style.backgroundColor = color;
+    list.appendChild(chip);
+}
+
+function showNewColorNotification(color) {
+    // Crear elemento de notificación
+    const notif = document.createElement('div');
+    notif.className = 'new-color-notification';
+
+    const icon = document.createElement('div');
+    icon.className = 'chip-icon';
+    icon.style.backgroundColor = color;
+
+    const text = document.createElement('span');
+    text.innerText = "¡NUEVO COLOR DESBLOQUEADO!";
+
+    notif.appendChild(icon);
+    notif.appendChild(text);
+
+    document.body.appendChild(notif);
+
+    // Remover después de la animación (4.5s total en CSS)
+    setTimeout(() => {
+        if (notif.parentNode) notif.parentNode.removeChild(notif);
+    }, 5000);
+}

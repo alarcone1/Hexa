@@ -375,14 +375,16 @@ canvas {
 }
 
 .gameover-content {
-    max-width: 500px;
-    text-align: center;
     background: rgba(15, 23, 42, 0.4);
+    /* Glassmorphism Premium */
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    padding: 30px;
+    padding: 40px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
 }
 
@@ -416,10 +418,11 @@ canvas {
 }
 
 .stat-card {
-    background: linear-gradient(145deg, #1e293b, #334155);
-    border: 1px solid var(--accent-color);
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Borde sutil */
     border-radius: 12px;
-    padding: 20px 15px;
+    padding: 20px 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -428,20 +431,33 @@ canvas {
 
 .stat-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.3);
 }
 
 .stat-value {
-    font-size: 2rem;
-    font-weight: bold;
+    font-size: 2.2rem;
+    font-weight: 800;
     color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.stat-icon {
+    width: 1rem;
+    height: 1rem;
+    opacity: 0.7;
 }
 
 #new-record {
@@ -475,28 +491,45 @@ canvas {
 .close-ranking-btn {
     border: none;
     padding: 15px 30px;
-    border-radius: 25px;
+    border-radius: 12px;
     font-size: 1rem;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s;
     text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+#restart-btn svg,
+#ranking-btn svg,
+.close-ranking-btn svg {
+    width: 1.2em;
+    height: 1.2em;
 }
 
 #restart-btn {
-    background: linear-gradient(135deg, var(--accent-color), #0891b2);
-    color: white;
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--accent-color);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);
 }
 
 #ranking-btn {
-    background: linear-gradient(135deg, var(--gold), #d97706);
-    color: #1e293b;
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--gold);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1);
 }
 
 #restart-btn:hover,
-#ranking-btn:hover,
-.close-ranking-btn:hover {
-    transform: scale(1.05);
+#ranking-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    filter: brightness(1.2);
 }
 
 /* Eliminamos estilos viejos de config trigger ya que ahora comparte estilo arriba */
@@ -547,6 +580,16 @@ canvas {
     text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
     /* Glow base */
     animation: gentlePulse 3s infinite ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.config-icon-large {
+    width: 1.5em;
+    height: 1.5em;
+    opacity: 0.8;
 }
 
 @keyframes gentlePulse {
@@ -666,57 +709,62 @@ canvas {
     text-align: center;
 }
 
-/* ACCIONES */
+/* ACCIONES CONFIG */
 .config-actions {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: 30px;
+    gap: 15px;
+    width: 100%;
+    margin-top: 10px;
 }
 
-#new-game-btn {
+#view-ranking-btn,
+#new-game-btn,
+#cancel-config-btn {
     width: 100%;
-    background: linear-gradient(135deg, var(--accent-color), #0284c7);
-    color: white;
-    border: none;
-    padding: 16px;
+    padding: 15px;
     border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 1px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 5px 20px rgba(56, 189, 248, 0.3);
+    transition: all 0.2s;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-#new-game-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(56, 189, 248, 0.5);
+#view-ranking-btn svg,
+#new-game-btn svg {
+    width: 1.2em;
+    height: 1.2em;
 }
 
 #view-ranking-btn {
-    width: 100%;
     background: rgba(251, 191, 36, 0.1);
     color: var(--gold);
     border: 1px solid rgba(251, 191, 36, 0.3);
-    padding: 12px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
 }
 
 #view-ranking-btn:hover {
     background: rgba(251, 191, 36, 0.2);
 }
 
+#new-game-btn {
+    background: linear-gradient(90deg, #0ea5e9, #0284c7);
+    color: white;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+}
+
 #cancel-config-btn {
     background: transparent;
-    border: none;
     color: #64748b;
-    cursor: pointer;
+    font-size: 0.9rem;
     padding: 10px;
+    margin-top: 5px;
 }
 
 #cancel-config-btn:hover {
@@ -740,14 +788,14 @@ canvas {
     text-decoration: none;
 }
 
-/* PÁGINA DE RANKING */
+/* PÁGINA DE RANKING PREMIUM */
 #ranking-modal {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.98);
+    background: rgba(15, 23, 42, 0.95);
     z-index: 350;
     display: none;
     flex-direction: column;
@@ -762,38 +810,51 @@ canvas {
 }
 
 .ranking-content {
-    background: #1e293b;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     padding: 40px;
     border-radius: 20px;
-    border: 2px solid var(--gold);
+    border: 1px solid var(--gold);
+    /* Borde dorado sutil */
     width: 90%;
     max-width: 600px;
     text-align: center;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 }
 
 .ranking-content h2 {
     color: var(--gold);
     margin-bottom: 5px;
-    font-size: 2.5rem;
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
 }
 
 #ranking-difficulty-label {
     color: #94a3b8;
     margin-bottom: 30px;
-    font-size: 1.2rem;
+    font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+    display: inline-block;
 }
 
 .ranking-table-header {
     display: grid;
-    grid-template-columns: 0.5fr 1fr 1fr 1.5fr;
-    background: rgba(0, 0, 0, 0.3);
+    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
+    /* Añadida columna Hora */
+    background: rgba(30, 41, 59, 0.6);
     padding: 15px;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
     color: var(--accent-color);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
 }
 
 #full-scores-list {
@@ -801,14 +862,18 @@ canvas {
     border-radius: 0 0 8px 8px;
     min-height: 200px;
     margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: none;
 }
 
 .ranking-row {
     display: grid;
-    grid-template-columns: 0.5fr 1fr 1fr 1.5fr;
+    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
+    /* Añadida columna Hora */
     padding: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: background 0.2s;
+    font-size: 0.95rem;
 }
 
 .ranking-row:hover {
@@ -818,19 +883,41 @@ canvas {
 .ranking-row.gold {
     color: #fbbf24;
     font-weight: bold;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
 }
 
 .ranking-row.silver {
     color: #e2e8f0;
+    font-weight: bold;
 }
 
 .ranking-row.bronze {
     color: #b45309;
+    font-weight: bold;
 }
 
 .close-ranking-btn {
-    background: #475569;
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 30px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.close-ranking-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
     color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    transform: translateY(-2px);
 }
 
 /* Botones viejos eliminados - CSS limpio */
@@ -850,3 +937,67 @@ canvas {
 /* Botones viejos eliminados - CSS limpio */
 
 /* Slider viejo eliminado - CSS limpio */
+
+/* BARRA LATERAL DE COLORES ACTIVOS */
+#active-colors-sidebar {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    /* Alineado arriba con el HUD */
+    /* transform removed */
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    min-width: 60px;
+}
+
+#active-colors-sidebar h3 {
+    margin: 0;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    letter-spacing: 1px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+    width: 100%;
+}
+
+#active-colors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.active-color-chip {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Duración mayor para énfasis */
+}
+
+.active-color-chip::after {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 20%;
+    width: 30%;
+    height: 30%;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    filter: blur(1px);
+}
+
+/* Fin Sidebar - Notificaciones eliminadas */
