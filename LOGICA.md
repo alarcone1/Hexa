@@ -8,54 +8,61 @@ El juego se basa en el flujo de fichas de colores a través de un tablero hexago
 - **Tablero (`state.board`)**: Un `Map` donde la clave es "q,r" y el valor es un objeto Celda `{ type, chips: [] }`.
 - **Fichas (`chips`)**: Un array simple de strings (colores hex). El último elemento es el superior (Top).
 
-## Diagrama de Flujo (Sistema de Cascada / Queue)
+## Diagrama de Flujo (Strategic Reveal System)
 
-El juego utiliza un sistema de **Cola de Eventos** para manejar las reacciones en cadena. Cuando una celda es activada (por el jugador o por recibir fichas), entra en la cola. Mientras la cola no esté vacía, el juego procesa la siguiente celda.
+El núcleo del juego es la función `processMove`. Ya no se mueve ciegamente; ahora "piensa" dónde unirse para causar el mayor impacto (Eliminación Inmediata) o preparar el futuro (Revelación Estratégica).
 
 ```mermaid
 flowchart TD
-    Start([Inicio: Celda Q,R agregada a Cola]) --> Loop{¿Cola > 0?}
-    Loop -- No --> End([Fin de Cascada])
-    Loop -- Sí --> Pop[Extraer Siguiente Celda: Current]
+    Start([Inicio: Cola de Procesamiento]) --> QueueCheck{¿Cola Vacía?}
     
-    Pop --> CheckChips{¿Tiene Fichas?}
-    CheckChips -- No --> Loop
-    CheckChips -- Sí --> GetColor[TopColor de Current]
+    %% FAILSAFE SYSTEM
+    QueueCheck -- Sí --> Failsafe1{¿Hay Eliminación Pendiente?}
+    Failsafe1 -- Sí --> AddPending[Agregar a Cola] --> Process
+    Failsafe1 -- No --> Failsafe2{¿Hay Conexión Fragmentada?}
+    Failsafe2 -- Sí --> AddFragment[Agregar a Cola (Re-activar)] --> Process
+    Failsafe2 -- No --> End([Fin de Turno])
+
+    %% MAIN PROCESS
+    QueueCheck -- No --> Process[Extraer Celda Actual]
+    Process --> HasChips{¿Tiene Fichas?}
+    HasChips -- No --> QueueCheck
+    HasChips -- Sí --> Neighbors[Buscar Vecinos del mismo Color]
     
-    GetColor --> Scan[Escanear Vecinos]
-    Scan --> MatchCount{¿Cuantos Vecinos con match?}
+    Neighbors --> CountMatches{¿Vecinos > 0?}
     
-    %% CASO 0
-    MatchCount -- 0 --> Stay[Stay: Fichas se quedan]
-    Stay --> Loop
+    %% SOLITARY CASE
+    CountMatches -- No --> SoloCheck[Verificar Eliminación en Sitio]
+    SoloCheck --> Eliminated{¿Se eliminó?}
+    Eliminated -- Sí --> QueueCheck
+    Eliminated -- No --> QueueCheck
+
+    %% STRATEGIC SCORING
+    CountMatches -- Sí --> Scoring[**EVALUAR CANDIDATOS**]
+    Scoring --> Score1[1. Prioridad: ELIMINACIÓN INMEDIATA (Suma >= 10)]
+    Score1 --> Score2[2. Estrategia: REVELACIÓN (Ver qué color hay abajo)]
+    Score2 --> Score3[3. Tie-Breaker: Tamaño de Pila (Gravedad)]
     
-    %% CASO 1
-    MatchCount -- 1 --> MoveDirect[Mover Directo a Target]
-    MoveDirect --> AddTarget[Agregar Target a Cola]
-    AddTarget --> CheckCurrent[Agregar Current a Cola]
-    CheckCurrent --> CheckElim[¿Target >= 10? -> Eliminar]
-    CheckElim --> Loop
+    Score3 --> Winner[Seleccionar MEJOR DESTINO]
     
-    %% CASO > 1
-    MatchCount -- "> 1" --> Gather[Gather: Vecinos -> Current]
-    Gather --> AddNeighbors[Agregar Vecinos (vacíos) a Cola]
-    AddNeighbors --> Recalc[Recalcular Current]
+    %% EXECUTION
+    Winner --> IsCenter{¿Es la propia celda?}
     
-    Recalc --> Overflow{¿Current >= 10?}
-    Overflow -- Sí --> ElimCenter[Eliminar en Current]
-    ElimCenter --> CurrentAgain[Agregar Current a Cola]
-    CurrentAgain --> Loop
-    
-    Overflow -- No --> Loop
-    %% Nota: Si no hay overflow tras Gather, se queda ahí (Island) hasta que otro evento lo despierte.
+    %% GATHER (Center wins)
+    IsCenter -- Sí --> Gather[**GATHER**: Todos los vecinos vienen al Centro]
+    Gather --> UpdateQ[Agregar todos a Cola] --> QueueCheck
+
+    %% PUMP AND DUMP (Neighbor wins)
+    IsCenter -- No --> Pump[**PUMP**: Vecinos lejanos vienen al Centro]
+    Pump --> Dump[**DUMP**: Centro mueve todo al Vecino Ganador]
+    Dump --> UpdateQ --> QueueCheck
 ```
 
-### Reglas de Cascada (Queue System)
-1.  **Activación**: Cualquier celda que sea *origen* o *destino* de un movimiento, o que sufra una eliminación, se agrega a la **Cola de Procesamiento**.
-2.  **Ciclo de Vida**:
-    *   Extraemos una celda de la cola.
-    *   Si tiene fichas, buscamos vecinos coincidentes.
-    *   Si **Mueve** sus fichas -> La celda destino se activa (entra a cola). La celda origen se activa de nuevo (para ver su siguiente color).
-    *   Si **Reúne (Gather)** fichas -> Los vecinos origen se activan (perdieron fichas, revelan color). La celda actual crece.
-    *   Si **Elimina** fichas -> La celda se activa de nuevo para procesar las fichas que estaban debajo.
-3.  **Estabilidad**: El turno termina solo cuando la cola está vacía y ninguna ficha puede moverse más.
+### Reglas de Decisión (Scoring)
+El sistema evalúa cada posible destino de fusión (la celda actual y sus vecinos) y asigna puntaje:
+1.  **Eliminación Inmediata (Score 1000+)**: Si mover las fichas a ese destino causa una suma >= 10, es la prioridad absoluta.
+2.  **Revelación Estratégica (+50 pts/match)**: Si no hay eliminación, el sistema simula el movimiento. "Mira" debajo de las fichas que se moverían. Si el color revelado crea nuevas conexiones, ese destino gana puntos extra.
+3.  **Gravedad (+Size)**: A igualdad de condiciones, las fichas prefieren ir hacia pilas más grandes.
+
+### Failsafe (Recuperación)
+Si la cola se vacía pero el tablero quedó en un estado "roto" (fichas conectadas que no se unieron), el sistema ejecuta `findFragmentedConnection()` para reactivar esas celdas y asegurar que siempre se completen todas las fusiones posibles.

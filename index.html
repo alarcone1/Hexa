@@ -5,6 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HexaFlow: Strategic Honeycomb</title>
+    <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            const container = document.getElementById('message-overlay');
+            if (container) {
+                container.style.opacity = 1;
+                container.style.fontSize = "12px";
+                container.style.textAlign = "left";
+                container.style.whiteSpace = "pre-wrap";
+                container.innerText = `Error: ${msg}\nLine: ${lineNo}\nFile: ${url}\nError Object: ${error}`;
+                console.error("Global Error:", msg, error);
+            }
+            alert(`Error: ${msg}\n${url}:${lineNo}`);
+            return false;
+        };
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -22,13 +37,17 @@
         <div id="hud">
             <!-- Botones de Sistema (Arriba Izquierda) -->
             <div class="hud-buttons">
-                <button id="help-trigger" onclick="toggleHelp()" data-tooltip="Ayuda">
-                    <i data-lucide="circle-help"></i>
+                <button id="ranking-trigger" class="hud-btn" onclick="showRankingModal()"
+                    data-tooltip="Salón de la Fama">
+                    <i data-lucide="trophy"></i>
                 </button>
-                <button id="config-trigger" onclick="toggleConfig()" data-tooltip="Configuración">
+                <button id="config-trigger" class="hud-btn" onclick="toggleConfig()" data-tooltip="Configuración">
                     <i data-lucide="settings"></i>
                 </button>
-                <button id="quick-restart-trigger" onclick="newGame()" data-tooltip="Reiniciar">
+                <button id="help-trigger" class="hud-btn" onclick="toggleHelp()" data-tooltip="Ayuda">
+                    <i data-lucide="circle-help"></i>
+                </button>
+                <button id="quick-restart-trigger" class="hud-btn" onclick="newGame()" data-tooltip="Reiniciar">
                     <i data-lucide="rotate-ccw"></i>
                 </button>
             </div>
@@ -148,6 +167,16 @@
         <div id="ranking-modal">
             <div class="ranking-content">
                 <h2>SALÓN DE LA FAMA</h2>
+
+                <div class="difficulty-segmented-control" style="margin-bottom: 20px;">
+                    <button class="segment-btn ranking-filter" data-difficulty="2"
+                        onclick="showRankingModal(2)">Fácil</button>
+                    <button class="segment-btn ranking-filter active" data-difficulty="3"
+                        onclick="showRankingModal(3)">Normal</button>
+                    <button class="segment-btn ranking-filter" data-difficulty="4"
+                        onclick="showRankingModal(4)">Difícil</button>
+                </div>
+
                 <div id="ranking-header-container"></div>
 
                 <div class="ranking-table-header">
@@ -159,11 +188,13 @@
                 </div>
                 <div id="full-scores-list"></div>
 
-                <button class="close-ranking-btn" onclick="closeRanking()">
-                    <i data-lucide="house"
-                        style="width: 1.2em; height: 1.2em; display: inline-block; vertical-align: middle; margin-right: 5px;"></i>
-                    VOLVER
-                </button>
+                <div style="display: flex; justify-content: center; margin-top: 20px;">
+                    <button class="close-ranking-btn" onclick="closeRanking()">
+                        <i data-lucide="house"
+                            style="width: 1.2em; height: 1.2em; display: inline-block; vertical-align: middle; margin-right: 5px;"></i>
+                        VOLVER
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -208,15 +239,7 @@
                 </div>
 
                 <div class="config-actions">
-                    <button id="view-ranking-btn" onclick="showRankingFromConfig()">
-                        <i data-lucide="trophy"></i>
-                        Salón de la Fama
-                    </button>
-                    <button id="new-game-btn" onclick="startGame()">
-                        <i data-lucide="gamepad-2"></i>
-                        JUGAR NUEVA PARTIDA
-                    </button>
-                    <button id="cancel-config-btn" onclick="toggleConfig()">Cancelar</button>
+                    <button id="cancel-config-btn" onclick="toggleConfig()">Cerrar</button>
                 </div>
 
                 <div class="danger-zone-link">
@@ -226,7 +249,7 @@
         </div>
     </div>
 
-    <script src="game.js?v=20260106_fix"></script>
+    <script type="module" src="js/main.js"></script>
     <script>
         lucide.createIcons();
     </script>
