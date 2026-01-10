@@ -96,22 +96,47 @@ function selectPile(index) {
     updatePileUI();
 }
 
+
+
 function setDifficulty(level) {
+    level = parseInt(level); // Ensure number
+    if (isNaN(level)) return;
+
     state.difficulty = level;
-    // hexRadius = level; // Handled in initBoard usually, but we need to update state
-    // In state.js we export setHexRadius? 
-    // initBoard calls setHexRadius.
-    // updating state.difficulty acts as source of truth for initBoard.
+    console.log(`Difficulty set to: ${level}`);
+
+    // Presets Definition (Moved inside for safety)
+    const presets = {
+        2: { goal: 100, height: 25 }, // Fácil
+        3: { goal: 200, height: 20 }, // Normal
+        4: { goal: 300, height: 15 }  // Difícil
+    };
+
+    // Apply Presets
+    const preset = presets[level];
+    if (preset) {
+        state.goal = preset.goal;
+        state.maxStackHeight = preset.height;
+        console.log(`Applied preset for ${level}: Goal ${preset.goal}, Height ${preset.height}`);
+
+        const goalSlider = document.getElementById('goal-range');
+        if (goalSlider) {
+            goalSlider.value = preset.goal;
+            updateGoalLabel(preset.goal);
+        }
+
+        const heightSlider = document.getElementById('height-range');
+        if (heightSlider) {
+            heightSlider.value = preset.height;
+            updateHeightLabel(preset.height);
+        }
+    }
 
     updateDifficultyButtons();
+}
 
-    // Suggest goal
-    const suggestedGoal = 100 + (level * 50);
-    const goalSlider = document.getElementById('goal-range');
-    if (goalSlider) {
-        goalSlider.value = suggestedGoal;
-        updateGoalLabel(suggestedGoal);
-    }
+function setGoal(value) {
+    state.goal = parseInt(value);
 }
 
 function setMaxHeight(value) {
@@ -144,6 +169,7 @@ window.mulligan = mulligan;
 window.toggleConfig = toggleConfig;
 window.toggleHelp = toggleHelp;
 window.setDifficulty = setDifficulty;
+window.setGoal = setGoal; // Added missing export
 window.setMaxHeight = setMaxHeight;
 window.updateGoalLabel = updateGoalLabel;
 window.updateHeightLabel = updateHeightLabel;

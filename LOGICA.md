@@ -66,3 +66,13 @@ El sistema evalúa cada posible destino de fusión (la celda actual y sus vecino
 
 ### Failsafe (Recuperación)
 Si la cola se vacía pero el tablero quedó en un estado "roto" (fichas conectadas que no se unieron), el sistema ejecuta `findFragmentedConnection()` para reactivar esas celdas y asegurar que siempre se completen todas las fusiones posibles.
+
+## Sistema de Dificultad Dinámica
+
+El juego implementa "Presets de Balanceo" (`DIFFICULTY_PRESETS`) que ajustan las variables del entorno según el tamaño del tablero escogido, aunque el jugador puede refinar estos valores manualmente:
+
+| Dificultad | Radio (Tablero) | Meta de Puntos | Límite de Altura | Descripción |
+| :--- | :---: | :---: | :---: | :--- |
+| **Fácil** | 2 (19 celdas) | 100 | 25 | Tablero pequeño, pilas muy altas permitidas. Ideal para aprender. |
+| **Normal** | 3 (37 celdas) | 200 | 20 | Balance estándar. Requiere gestión de espacio. |
+| **Difícil** | 4 (61 celdas) | 300 | 15 | Tablero grande, pero las pilas se bloquean rápido (15). Requiere High-IQ combos. |

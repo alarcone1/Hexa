@@ -1,16 +1,60 @@
+/* =========================================
+   1. DESIGN TOKENS (Fuente de verdad)
+   ========================================= */
 :root {
-    --bg-color: #0f172a;
-    --panel-color: #1e293b;
-    --text-color: #f8fafc;
-    --accent-color: #38bdf8;
-    --gold: #fbbf24;
+    /* Paleta de Colores */
+    --bg-root: #0f172a;
+    /* Slate 900 */
+    --bg-panel: rgba(30, 41, 59, 0.6);
+    /* Slate 800 (Glass Base) */
+    --bg-modal: rgba(15, 23, 42, 0.95);
+    /* Overlay oscuro */
+
+    --text-main: #f8fafc;
+    /* Slate 50 */
+    --text-muted: #94a3b8;
+    /* Slate 400 */
+
+    --color-accent: #38bdf8;
+    /* Sky 400 (Acción/Neon) */
+    --color-gold: #fbbf24;
+    /* Amber 400 (Rewards) */
+    --color-danger: #ef4444;
+    /* Red 500 */
+
+    /* Espaciado */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+
+    /* Bordes */
+    --radius-main: 12px;
+    --radius-pill: 50px;
+
+    /* Capas (Z-Index System) */
+    --z-back: -1;
+    --z-board: 10;
+    --z-ui: 100;
+    /* HUD, Controles */
+    --z-modal: 1000;
+    /* Overlays */
+    --z-toast: 9999;
+}
+
+/* =========================================
+   2. RESET & BASE
+   ========================================= */
+* {
+    box-sizing: border-box;
 }
 
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background-color: var(--bg-root);
+    color: var(--text-main);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
     display: flex;
@@ -20,6 +64,26 @@ body {
     height: 100vh;
 }
 
+/* =========================================
+   3. UTILIDADES & MIXINS
+   ========================================= */
+/* Clase utilitaria para aplicar Glassmorphism estándar */
+.u-glass,
+.glass-panel,
+#hud .hud-buttons .hud-btn,
+#bottom-stats,
+.pile-slot,
+.config-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* =========================================
+   4. LAYOUT PRINCIPAL
+   ========================================= */
 #game-container {
     position: relative;
     width: 100%;
@@ -27,85 +91,7 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-}
-
-#hud {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 20;
-    pointer-events: none;
-    /* Permitir clicks a través del área vacía */
-}
-
-.hud-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    pointer-events: auto;
-}
-
-/* Botones de cabecera uniformes */
-/* Botones de cabecera uniformes - Glassmorphism */
-/* Botones de cabecera uniformes - Glassmorphism */
-/* Botones de cabecera uniformes - Glassmorphism */
-#hud .hud-buttons .hud-btn {
-    background: rgba(30, 41, 59, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: var(--text-color);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-}
-
-#hud .hud-buttons .hud-btn:hover {
-    transform: scale(1.1);
-    background: var(--accent-color);
-    color: var(--bg-color);
-    box-shadow: 0 0 15px var(--accent-color);
-}
-
-/* Tooltips Premium */
-.hud-buttons button {
-    position: relative;
-}
-
-.hud-buttons button::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: 120%;
-    /* A la derecha del botón */
-    top: 50%;
-    transform: translateY(-50%) translateX(-10px);
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-}
-
-.hud-buttons button:hover::after {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
+    z-index: var(--z-board);
 }
 
 canvas {
@@ -115,25 +101,137 @@ canvas {
     height: 100%;
 }
 
-/* Barra de Stats Inferior */
-/* Barra de Stats Inferior - Panel Flotante */
+/* =========================================
+   5. HUD (HEADS UP DISPLAY)
+   ========================================= */
+#hud {
+    position: absolute;
+    top: var(--space-lg);
+    left: var(--space-lg);
+    z-index: var(--z-ui);
+    pointer-events: none;
+    /* Click-through */
+}
+
+.hud-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    pointer-events: auto;
+}
+
+#hud .hud-buttons .hud-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-main);
+    color: var(--text-main);
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    /* Glass properties heredadas de .u-glass arriba */
+}
+
+#hud .hud-buttons .hud-btn:hover {
+    transform: translateY(-2px);
+    background: var(--color-accent);
+    color: var(--bg-root);
+    box-shadow: 0 0 15px var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+/* Tooltips */
+.hud-buttons button {
+    position: relative;
+}
+
+.hud-buttons button::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 120%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-10px);
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: var(--z-toast);
+}
+
+.hud-buttons button:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* =========================================
+   6. SIDEBAR (ACTIVE COLORS)
+   ========================================= */
+#active-colors-sidebar {
+    position: absolute;
+    right: var(--space-lg);
+    top: var(--space-lg);
+    z-index: var(--z-ui);
+    padding: var(--space-md);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    min-width: 60px;
+    /* Aplica Glassmorphism base */
+    background: var(--bg-panel);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#active-colors-sidebar h3 {
+    margin: 0;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+    width: 100%;
+}
+
+.active-color-chip {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.active-color-chip.latest {
+    box-shadow: 0 0 15px currentColor;
+    border-color: white;
+    animation: activeColorPulse 2s infinite ease-in-out;
+}
+
+/* =========================================
+   7. PANELES DE JUEGO (Bottom Stats & Controls)
+   ========================================= */
 #bottom-stats {
     display: flex;
     justify-content: center;
     gap: 40px;
     padding: 15px 30px;
-    margin-bottom: 20px;
-    /* Separado de los controles */
-    background: rgba(30, 41, 59, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    margin-bottom: var(--space-lg);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 15;
+    z-index: var(--z-ui);
     width: auto;
     align-self: center;
-    /* Centrado en el contenedor flex */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .stat-item {
@@ -145,62 +243,46 @@ canvas {
 
 .stat-label {
     font-size: 0.75rem;
-    color: var(--accent-color);
+    color: var(--color-accent);
     letter-spacing: 1.5px;
     margin-bottom: 4px;
-    text-shadow: 0 1px 2px black;
+    text-transform: uppercase;
 }
 
 .stat-num {
     font-size: 1.4rem;
     font-weight: 800;
     color: white;
-    text-shadow: 0 2px 4px black;
     transition: transform 0.2s, color 0.2s;
 }
 
 .stat-num.changed {
     animation: statPulse 0.3s ease-out;
-    color: var(--gold);
-}
-
-@keyframes statPulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.5);
-        text-shadow: 0 0 15px var(--gold);
-    }
-
-    100% {
-        transform: scale(1);
-    }
+    color: var(--color-gold);
 }
 
 #controls {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: var(--space-lg);
     align-items: center;
-    padding: 20px;
-    margin: 0 20px 20px 20px;
+    padding: var(--space-lg);
+    margin: 0 var(--space-lg) var(--space-lg) var(--space-lg);
+
+    /* Controls Island Styling */
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    z-index: 10;
+    z-index: var(--z-ui);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+/* Pilas (Slots) */
 .pile-slot {
     width: 70px;
     height: 70px;
-    background: rgba(30, 41, 59, 0.4);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: var(--radius-main);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -210,160 +292,497 @@ canvas {
 
 .pile-slot:hover {
     transform: scale(1.1);
+    border-color: var(--color-accent);
 }
 
 .pile-slot.selected {
-    border-color: var(--accent-color);
+    border-color: var(--color-accent);
     box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+    /* Accent shadow */
     background: rgba(56, 189, 248, 0.1);
     transform: translateY(-5px);
 }
 
-/* Mulligan Button - Glassmorphism Gold */
-#mulligan-btn {
-    background: rgba(251, 191, 36, 0.2);
-    color: var(--gold);
-    border: 1px solid rgba(251, 191, 36, 0.4);
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: bold;
+/* Botón Mulligan (Gold) & Shared Outline Buttons */
+#mulligan-btn,
+.close-ranking-btn,
+#cancel-config-btn,
+#close-help-btn {
+    background: rgba(251, 191, 36, 0.1);
+    /* Slightly more transparent for premium feel */
+    color: var(--color-gold);
+    border: 1px solid var(--color-gold);
+    /* Solid gold border as per image */
+    padding: 12px 32px;
+    /* Wider padding like the image */
+    border-radius: 50px;
+    /* Pill shape! This was the key missing piece */
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     font-size: 0.95rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+    min-width: 160px;
+    /* Ensure visual symmetry/width consistency */
 }
 
-.btn-icon {
-    font-size: 1.1rem;
-    line-height: 1;
-}
-
-#mulligan-btn:hover {
-    background: rgba(251, 191, 36, 0.3);
+#mulligan-btn:hover:not(:disabled),
+.close-ranking-btn:hover,
+#cancel-config-btn:hover,
+#close-help-btn:hover {
+    background: rgba(251, 191, 36, 0.25);
     box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
     transform: translateY(-2px);
+    border-color: var(--color-gold);
+}
+
+#mulligan-btn:active:not(:disabled),
+.close-ranking-btn:active,
+#cancel-config-btn:active,
+#close-help-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.1);
 }
 
 #mulligan-btn:disabled {
-    background: rgba(148, 163, 184, 0.1);
-    color: var(--text-color);
-    border-color: rgba(255, 255, 255, 0.1);
     opacity: 0.5;
     cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
+    filter: grayscale(1);
 }
 
-/* Ranking flotante eliminado */
+/* ... existing code ... */
 
-#message-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--gold);
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 100;
-}
+/* Estilos específicos Modal Game Over - ... */
 
-/* MODAL DE AYUDA */
-#help-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.95);
-    z-index: 200;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    text-align: center;
-    overflow-y: auto;
-}
-
-#help-modal.active {
-    display: flex;
-}
-
+/* Estilos específicos Modal Ranking & Config & Help (Shared Border) */
+.ranking-content,
+.config-content,
 .help-content {
-    max-width: 600px;
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    padding: 30px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+    max-width: 650px;
+    border-color: var(--color-gold);
 }
 
+.ranking-content h2,
 .help-content h2 {
-    color: var(--gold);
-    margin-bottom: 20px;
+    color: var(--color-gold);
 }
 
-.help-section {
-    margin-bottom: 20px;
-    text-align: left;
-    background: rgba(30, 41, 59, 0.5);
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-color);
-}
-
-.help-section h3 {
-    margin-top: 0;
-    color: var(--accent-color);
-}
-
-#close-help-btn {
-    background: var(--gold);
-    color: var(--bg-color);
-    border: none;
-    padding: 15px 30px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
-/* MODAL DE GAME OVER */
-#gameover-modal {
-    position: absolute;
+/* =========================================
+   8. MODALES (SISTEMA UNIFICADO)
+   ========================================= */
+/* Base para todos los overlays */
+#help-modal,
+#gameover-modal,
+#config-modal,
+#ranking-modal {
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.97);
-    z-index: 300;
+    background: var(--bg-modal);
+    z-index: var(--z-modal);
     display: none;
+    /* JS toggles 'active' */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    animation: fadeIn 0.5s ease-out;
+    animation: fadeIn 0.3s ease-out;
+    /* Permite scroll en pantallas pequeñas si el contenido excede la altura */
+    overflow-y: auto;
 }
 
-#gameover-modal.active {
+.active {
+    display: flex !important;
+}
+
+/* Base para contenido de modales */
+/* Base para contenido de modales */
+.gameover-content,
+.ranking-content {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 550px;
+    text-align: center;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.config-content,
+.help-content {
+    /* Mismos estilos base pero sin restricción de altura/scroll interno */
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 550px;
+    /* Ancho consistente */
+    text-align: center;
+    /* Height natural - el scroll lo maneja el padre #config-modal */
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    margin: auto;
+
+    /* Centrado vertical en flex container con scroll */
+}
+
+/* Config Items - Cleaner "Cardless" Look -> Ahora "Subtle Zones" */
+.config-card {
+    background: rgba(255, 255, 255, 0.03);
+    /* Fondo sutil para separar */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Borde sutil */
+    box-shadow: none;
+    border-radius: 12px;
+    /* Bordes redondeados */
+    padding: 20px;
+    /* Padding interno */
+    margin-bottom: 20px;
+    /* Separación entre tarjetas */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Remover reglas anteriores que eliminaban bordes/fondos */
+/* .config-card:last-of-type { border-bottom: none; } <- Ya no aplica */
+
+/* Headers de Modales */
+.config-content h2,
+.ranking-content h2,
+.gameover-content h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+}
+
+/* Estilos específicos Modal Config */
+/* Estilos específicos Modal Config - REDISEÑADO */
+.config-content h2 {
+    color: var(--text-main);
+    /* Removed blue shadow/glow for cleaner look */
+    margin-bottom: 40px;
+}
+
+.config-icon-title {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: bottom;
+    margin-right: 10px;
+    color: var(--text-muted);
+    /* Icono más sutil */
+}
+
+/* Config Items - Styles handled above in unified block */
+/* .config-card defined previously */
+
+.config-card:last-of-type {
+    margin-bottom: 0;
+}
+
+.config-card h3 {
+    font-size: 1rem;
+    color: var(--color-accent);
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+}
+
+.config-desc-small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.config-actions {
+    margin-top: 30px;
+    width: 100%;
     display: flex;
+    justify-content: center;
 }
 
+/* #cancel-config-btn definition moved up to group with #mulligan-btn */
+
+/* Zona de Peligro (Reset) */
+.danger-zone-link {
+    margin-top: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+#reset-data-btn {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    /* Red border sutil */
+    color: var(--color-danger);
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: none;
+    /* No uppercase for secondary action */
+    letter-spacing: 0.5px;
+}
+
+#reset-data-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--color-danger);
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+#reset-data-btn i {
+    width: 14px;
+    height: 14px;
+}
+
+/* Estilos específicos Modal Game Over */
+.gameover-content h2 {
+    background: linear-gradient(135deg, #ef4444, #f97316, #eab308);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: pulse 2s infinite;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-main);
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.stat-card .stat-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Center content horizontally */
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+    width: 100%;
+    /* Ensure it takes full width so centering works relative to card if needed, or just let it center itself */
+}
+
+.modal-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    width: auto;
+    /* Prevent full width inheritance */
+    flex: 0 1 auto;
+    margin: 0;
+    /* Reset margins */
+}
+
+/* Estilos específicos Modal Ranking */
+/* .ranking-content border def moved up to group with .config-content */
+
+.ranking-content h2 {
+    color: var(--color-gold);
+}
+
+.ranking-table-header {
+    display: grid;
+    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
+    background: rgba(30, 41, 59, 0.8);
+    padding: 15px;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+}
+
+.ranking-row.gold {
+    color: var(--color-gold);
+    font-weight: bold;
+}
+
+/* =========================================
+   9. COMPONENTES DE UI (INPUTS & BOTONES)
+   ========================================= */
+
+/* Botones Genéricos (Action Buttons) */
+#restart-btn,
+#ranking-btn,
+#view-ranking-btn,
+#new-game-btn {
+    border: none;
+    padding: 15px 30px;
+    border-radius: var(--radius-main);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Variante Azul (Primary) */
+#new-game-btn,
+#restart-btn {
+    background: linear-gradient(135deg, var(--color-accent), #0284c7);
+    color: white;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+}
+
+/* Variante Gold (Secondary/Ranking) */
+/* Segmented Control */
+.difficulty-segmented-control {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+    justify-content: center;
+    /* Center the buttons */
+    max-width: 400px;
+    /* Limit width to look better centered */
+    margin: 0 auto 20px auto;
+    /* Center the container itself */
+}
+
+/* ... existing code ... */
+
+/* Variante Gold (Secondary/Ranking) - ANTIGUO REFACTORIZADO */
+
+#ranking-btn,
+#view-ranking-btn {
+    background: linear-gradient(135deg, var(--color-gold), #d97706);
+    color: white;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+}
+
+/* Botón Volver estilo Mulligan */
+/* Botones Volver unificados arriba con #mulligan-btn */
+/* .close-ranking-btn definition moved up */
+
+/* Hover Effects */
+button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+/* Sliders */
+input[type="range"] {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--color-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--color-accent);
+}
+
+/* Segmented Control Styles Unified - already declared above, removing duplicate/base styles here but keeping button styles */
+
+.segment-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    /* Ensuring centered text as requested */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.segment-btn.active {
+    background: var(--color-accent);
+    color: var(--bg-root);
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================
+   10. ANIMACIONES
+   ========================================= */
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: scale(0.9);
+        transform: scale(0.95);
     }
 
     to {
@@ -372,28 +791,33 @@ canvas {
     }
 }
 
-.gameover-content {
-    background: rgba(15, 23, 42, 0.4);
-    /* Glassmorphism Premium */
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    padding: 40px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 90%;
-    max-width: 500px;
-    text-align: center;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+@keyframes statPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.5);
+        text-shadow: 0 0 15px var(--color-gold);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
-.gameover-content h2 {
-    font-size: 2.5rem;
-    margin-bottom: 30px;
-    background: linear-gradient(135deg, #ef4444, #f97316, #eab308);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: pulse 1.5s ease-in-out infinite;
+@keyframes activeColorPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px currentColor;
+    }
+
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 25px currentColor, 0 0 10px white;
+    }
 }
 
 @keyframes pulse {
@@ -408,619 +832,86 @@ canvas {
     }
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
-}
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
 
-.stat-card {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    /* Borde sutil */
-    border-radius: 12px;
-    padding: 20px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
-    border-color: rgba(56, 189, 248, 0.3);
-}
-
-.stat-value {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: var(--accent-color);
-    text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    opacity: 0.8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.stat-icon {
-    width: 1rem;
-    height: 1rem;
-    opacity: 0.7;
-}
-
-#new-record {
-    font-size: 1.5rem;
-    color: var(--gold);
-    margin-bottom: 20px;
-    animation: bounce 0.6s ease infinite;
-}
-
-@keyframes bounce {
-
-    0%,
     100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.modal-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-#restart-btn,
-#ranking-btn,
-.close-ranking-btn {
-    border: none;
-    padding: 15px 30px;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-#restart-btn svg,
-#ranking-btn svg,
-.close-ranking-btn svg {
-    width: 1.2em;
-    height: 1.2em;
-}
-
-#restart-btn {
-    background: rgba(56, 189, 248, 0.2);
-    color: var(--accent-color);
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);
-}
-
-#ranking-btn {
-    background: rgba(251, 191, 36, 0.2);
-    color: var(--gold);
-    border: 1px solid rgba(251, 191, 36, 0.4);
-    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1);
-}
-
-#restart-btn:hover,
-#ranking-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-    filter: brightness(1.2);
-}
-
-/* Eliminamos estilos viejos de config trigger ya que ahora comparte estilo arriba */
-
-/* MODAL DE CONFIGURACIÓN */
-#config-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.97);
-    z-index: 250;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.3s ease-out;
-}
-
-#config-modal.active {
-    display: flex;
-}
-
-/* ESTILO PREMIUM GLASSMORPHISM */
-.config-content {
-    background: rgba(15, 23, 42, 0.4);
-    /* Mucho más transparente */
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    padding: 40px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 90%;
-    max-width: 500px;
-    text-align: center;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
-}
-
-.config-content h2 {
-    font-size: 1.8rem;
-    margin-bottom: 30px;
-    color: white;
-    font-weight: 300;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-    /* Glow base */
-    animation: gentlePulse 3s infinite ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-}
-
-.config-icon-large {
-    width: 1.5em;
-    height: 1.5em;
-    opacity: 0.8;
-}
-
-@keyframes gentlePulse {
-
-    0%,
-    100% {
-        text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
-        opacity: 0.9;
-    }
-
-    50% {
-        text-shadow: 0 0 20px rgba(56, 189, 248, 0.6), 0 0 10px rgba(251, 191, 36, 0.2);
+        transform: scale(1);
         opacity: 1;
     }
 }
 
-/* TARJETAS DE SECCIÓN */
-.config-card {
-    background: rgba(30, 41, 59, 0.6);
+/* Overlay de Mensajes Flotantes */
+#message-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--color-gold);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: var(--z-modal);
+}
+
+/* =========================================
+   9. HELP MODAL STYLES (Refinement)
+   ========================================= */
+.help-section {
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
     text-align: left;
 }
 
-.config-card h3 {
-    color: var(--gold);
-    margin: 0 0 15px 0;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.8;
+.help-section:last-of-type {
+    margin-bottom: 25px;
 }
 
-.config-desc-small {
-    font-size: 0.8rem;
-    color: #94a3b8;
-    margin-top: 10px;
-    text-align: center;
-}
-
-/* SEGMENTED CONTROL */
-.difficulty-segmented-control {
-    display: flex;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 4px;
-    gap: 4px;
-}
-
-.segment-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.segment-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.segment-btn.active {
-    background: var(--accent-color);
-    color: var(--bg-color);
-    font-weight: bold;
-    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);
-}
-
-/* SLIDER */
-.height-slider-container {
+.help-section h3 {
+    color: var(--color-accent);
+    font-size: 1.1rem;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 15px;
-}
-
-.height-slider-container input[type="range"] {
-    flex-grow: 1;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    -webkit-appearance: none;
-}
-
-.height-slider-container input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--accent-color);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 10px var(--accent-color);
-    margin-top: -6px;
-    /* Ajuste visual */
-}
-
-/* Fix para firefox si fuera necesario, pero mantenemos simple por ahora */
-.height-slider-container input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    cursor: pointer;
-}
-
-.slider-value {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 5px 10px;
-    border-radius: 5px;
-    color: var(--gold);
-    font-weight: bold;
-    min-width: 40px;
-    text-align: center;
-}
-
-/* ACCIONES CONFIG */
-.config-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-#view-ranking-btn,
-#new-game-btn,
-#cancel-config-btn {
-    width: 100%;
-    padding: 15px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
+    gap: 8px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.2s;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+    letter-spacing: 0.5px;
 }
 
-#view-ranking-btn svg,
-#new-game-btn svg {
-    width: 1.2em;
-    height: 1.2em;
+.help-section .section-icon {
+    width: 1.1em;
+    height: 1.1em;
+    color: var(--color-gold);
 }
 
-#view-ranking-btn {
-    background: rgba(251, 191, 36, 0.1);
-    color: var(--gold);
-    border: 1px solid rgba(251, 191, 36, 0.3);
-}
-
-#view-ranking-btn:hover {
-    background: rgba(251, 191, 36, 0.2);
-}
-
-#new-game-btn {
-    background: linear-gradient(90deg, #0ea5e9, #0284c7);
-    color: white;
-    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
-}
-
-#cancel-config-btn {
-    background: transparent;
-    color: #64748b;
-    font-size: 0.9rem;
-    padding: 10px;
-    margin-top: 5px;
-}
-
-#cancel-config-btn:hover {
-    color: white;
-    text-decoration: underline;
-}
-
-.danger-zone-link {
-    margin-top: 20px;
-    font-size: 0.8rem;
-    opacity: 0.5;
-    transition: opacity 0.2s;
-}
-
-.danger-zone-link:hover {
-    opacity: 1;
-}
-
-.danger-zone-link a {
-    color: #ef4444;
-    text-decoration: none;
-}
-
-/* PÁGINA DE RANKING PREMIUM */
-#ranking-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.95);
-    z-index: 350;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.3s;
-}
-
-#ranking-modal.active {
-    display: flex;
-}
-
-.ranking-content {
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    padding: 40px;
-    border-radius: 20px;
-    border: 1px solid var(--gold);
-    /* Borde dorado sutil */
-    width: 90%;
-    max-width: 600px;
-    text-align: center;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
-}
-
-.ranking-content h2 {
-    color: var(--gold);
-    margin-bottom: 5px;
-    font-size: 2rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
-}
-
-#ranking-difficulty-label {
-    color: #94a3b8;
-    margin-bottom: 30px;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 15px;
-    display: inline-block;
-}
-
-.ranking-table-header {
-    display: grid;
-    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
-    /* Añadida columna Hora */
-    background: rgba(30, 41, 59, 0.6);
-    padding: 15px;
-    border-radius: 8px 8px 0 0;
-    font-weight: bold;
-    color: var(--accent-color);
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-}
-
-#full-scores-list {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0 0 8px 8px;
-    min-height: 200px;
-    margin-bottom: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-top: none;
-}
-
-.ranking-row {
-    display: grid;
-    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
-    /* Añadida columna Hora */
-    padding: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: background 0.2s;
+.help-section p,
+.help-section li {
     font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 5px;
 }
 
-.ranking-row:hover {
-    background: rgba(255, 255, 255, 0.05);
+.help-section b {
+    color: var(--text-main);
 }
 
-.ranking-row.gold {
-    color: #fbbf24;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
-}
-
-.ranking-row.silver {
-    color: #e2e8f0;
-    font-weight: bold;
-}
-
-.ranking-row.bronze {
-    color: #b45309;
-    font-weight: bold;
-}
-
-.close-ranking-btn {
-    background: rgba(30, 41, 59, 0.4);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    color: #94a3b8;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px 30px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 10px;
-}
-
-.close-ranking-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
-    transform: translateY(-2px);
-}
-
-/* Botones viejos eliminados - CSS limpio */
-
-#start-game-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
-}
-
-/* Botones viejos eliminados - CSS limpio */
-
-#cancel-config-btn:hover {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-}
-
-/* Botones viejos eliminados - CSS limpio */
-
-/* Slider viejo eliminado - CSS limpio */
-
-/* BARRA LATERAL DE COLORES ACTIVOS */
-#active-colors-sidebar {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    /* Alineado arriba con el HUD */
-    /* transform removed */
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    z-index: 100;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    min-width: 60px;
-}
-
-#active-colors-sidebar h3 {
+.clean-list {
+    list-style: none;
+    padding: 0;
     margin: 0;
-    font-size: 0.7rem;
-    color: #94a3b8;
-    letter-spacing: 1px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 5px;
-    width: 100%;
 }
 
-#active-colors-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.active-color-chip {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+.clean-list li {
     position: relative;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    /* Duración mayor para énfasis */
+    padding-left: 0;
 }
-
-.active-color-chip::after {
-    content: '';
-    position: absolute;
-    top: 20%;
-    left: 20%;
-    width: 30%;
-    height: 30%;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    filter: blur(1px);
-}
-
-/* Fin Sidebar - Notificaciones eliminadas */
-
-.active-color-chip.latest {
-    box-shadow: 0 0 15px currentColor;
-    border-color: white;
-    animation: activeColorPulse 2s infinite ease-in-out;
-}
-
-@keyframes activeColorPulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 15px currentColor;
-    }
-
-    50% {
-        transform: scale(1.15);
-        box-shadow: 0 0 25px currentColor, 0 0 10px white;
-    }
-
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 15px currentColor;
-    }
-}
-
-/* End of File */

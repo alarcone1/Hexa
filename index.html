@@ -21,7 +21,7 @@
         };
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 
 <body>
@@ -88,30 +88,49 @@
                 </h2>
 
                 <div class="help-section">
-                    <h3>Objetivo</h3>
+                    <h3><i data-lucide="target" class="section-icon"></i> Objetivo</h3>
                     <p>Completa el nivel alcanzando la meta de puntos con la <b>mayor eficiencia posible</b>.</p>
-                    <p>Tu ranking dependerá de:</p>
+                </div>
+
+                <div class="help-section">
+                    <h3><i data-lucide="award" class="section-icon"></i> Ranking</h3>
+                    <p>Tu posición dependerá de:</p>
                     <ol>
-                        <li><b>Menor número de Pilas usadas</b> (Prioridad 1)</li>
+                        <li><b>Menor número de Pilas</b> (Prioridad 1)</li>
                         <li><b>Menor tiempo</b> (Prioridad 2)</li>
                     </ol>
                 </div>
 
                 <div class="help-section">
-                    <h3>Mecánica de Flujo</h3>
-                    <p>Cuando colocas una pila, las fichas "saltan" hacia pilas vecinas del mismo color dominante.
-                        ¡Usa
-                        esto para crear reacciones en cadena y ahorrar movimientos!</p>
+                    <h3><i data-lucide="zap" class="section-icon"></i> Mecánica de Flujo</h3>
+                    <p>Al colocar una pila, las fichas saltan a vacios vecinos del mismo color. ¡Crea reacciones en
+                        cadena!</p>
                 </div>
 
                 <div class="help-section">
-                    <h3>Controles</h3>
-                    <p>• <b>Click:</b> Selecciona pila y colócala en el tablero.</p>
-                    <p>• <b>Flechas (Mantener):</b> Rota el tablero suavemente.</p>
-                    <p>• <b>Mulligan:</b> Genera nuevas fichas (limitado).</p>
+                    <h3><i data-lucide="lightbulb" class="section-icon"></i> Tip Estratégico</h3>
+                    <p>¿Tus fichas no se unen?</p>
+                    <p>Es posible que hayas alcanzado el <b>Límite de Altura</b>. Aumenta este límite en <i
+                            data-lucide="settings-2" style="width: 1em; vertical-align: middle;"></i>
+                        <b>Configuración</b> para permitir fusiones más grandes.
+                    </p>
                 </div>
 
-                <button id="close-help-btn" onclick="toggleHelp()">ENTENDIDO</button>
+                <div class="help-section">
+                    <h3><i data-lucide="gamepad-2" class="section-icon"></i> Controles</h3>
+                    <ul class="clean-list">
+                        <li><b>Click:</b> Colocar pila</li>
+                        <li><b>Flechas:</b> Rotar tablero</li>
+                        <li><b>Mulligan:</b> Nuevas fichas</li>
+                    </ul>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="close-help-btn" onclick="toggleHelp()">
+                        <i data-lucide="house"></i>
+                        VOLVER
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -166,7 +185,11 @@
         <!-- PÁGINA DE RANKING -->
         <div id="ranking-modal">
             <div class="ranking-content">
-                <h2>SALÓN DE LA FAMA</h2>
+                <h2>
+                    <i data-lucide="trophy"
+                        style="width: 1.2em; height: 1.2em; vertical-align: bottom; margin-right: 10px;"></i>
+                    SALÓN DE LA FAMA
+                </h2>
 
                 <div class="difficulty-segmented-control" style="margin-bottom: 20px;">
                     <button class="segment-btn ranking-filter" data-difficulty="2"
@@ -190,8 +213,7 @@
 
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
                     <button class="close-ranking-btn" onclick="closeRanking()">
-                        <i data-lucide="house"
-                            style="width: 1.2em; height: 1.2em; display: inline-block; vertical-align: middle; margin-right: 5px;"></i>
+                        <i data-lucide="house"></i>
                         VOLVER
                     </button>
                 </div>
@@ -202,7 +224,7 @@
         <div id="config-modal">
             <div class="config-content">
                 <h2>
-                    <i data-lucide="settings" class="config-icon-large"></i>
+                    <i data-lucide="settings" class="config-icon-title"></i>
                     CONFIGURACIÓN
                 </h2>
 
@@ -239,17 +261,23 @@
                 </div>
 
                 <div class="config-actions">
-                    <button id="cancel-config-btn" onclick="toggleConfig()">Cerrar</button>
+                    <button id="cancel-config-btn" onclick="toggleConfig()">
+                        <i data-lucide="house"></i>
+                        VOLVER
+                    </button>
                 </div>
 
                 <div class="danger-zone-link">
-                    <a href="#" onclick="resetRankingsConfirm(); return false;">⚠️ Resetear Rankings Data</a>
+                    <button id="reset-data-btn" onclick="resetRankingsConfirm()">
+                        <i data-lucide="trash-2"></i>
+                        Resetear Rankings Data
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/main.js?v=2"></script>
     <script>
         lucide.createIcons();
     </script>

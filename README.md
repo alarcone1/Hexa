@@ -60,8 +60,9 @@ cd hexaflow
 ## ⚙️ Configuración
 
 Dentro del juego, el icono de engranaje (⚙) te permite ajustar:
-*   **Dificultad (Radio)**: Fácil (2), Normal (3), Difícil (4).
+*   **Dificultad (Radio)**: Fácil (2), Normal (3), Difícil (4). Al seleccionar una, se aplican automáticamente los valores recomendados para un balance ideal.
 *   **Meta de Puntos**: Define el desafío del nivel.
+*   **Límite de Altura**: Estratégico. Define cuándo una pila deja de aceptar fusiones (se puede ajustar manualmente).
 *   **Ranking**: Consulta tus mejores tiempos y movimientos por dificultad.
 
 ---
