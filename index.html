@@ -35,6 +35,9 @@
         </div>
 
         <div id="hud">
+            <!-- Nivel Actual (Ascensión) -->
+            <div id="level-indicator">NIVEL 1</div>
+
             <!-- Botones de Sistema (Arriba Izquierda) -->
             <div class="hud-buttons">
                 <button id="ranking-trigger" class="hud-btn" onclick="showRankingModal()"
@@ -58,13 +61,26 @@
 
         <!-- Ranking Flotante ELIMINADO en favor de página dedicada -->
 
-        <!-- Barra de Estadísticas (Ahora encima de los controles) -->
-        <div id="bottom-stats">
-            <div class="stat-item"><span class="stat-label">PUNTOS</span> <span id="score" class="stat-num">0</span>
+        <!-- Wrapper para Centrado Simétrico -->
+        <div id="dashboard-wrapper">
+            <!-- Barra de Progreso (Externa pero simétrica) -->
+            <div id="goal-progress-container">
+                <div id="goal-progress-bar">
+                    <div id="goal-progress-fill">
+                        <span id="goal-progress-label">0%</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item"><span class="stat-label">META</span> <span id="goal" class="stat-num">100</span>
-            </div>
-            <div class="stat-item"><span class="stat-label">MOV</span> <span id="moves-count" class="stat-num">0</span>
+
+            <!-- Barra de Estadísticas -->
+            <div id="bottom-stats">
+                <div class="stat-item"><span class="stat-label">PUNTOS</span> <span id="score" class="stat-num">0</span>
+                </div>
+                <div class="stat-item"><span class="stat-label">META</span> <span id="goal" class="stat-num">100</span>
+                </div>
+                <div class="stat-item"><span class="stat-label">MOV</span> <span id="moves-count"
+                        class="stat-num">0</span>
+                </div>
             </div>
         </div>
 
@@ -72,7 +88,7 @@
             <div id="pile-0" class="pile-slot" onclick="selectPile(0)"></div>
             <div id="pile-1" class="pile-slot" onclick="selectPile(1)"></div>
             <div id="pile-2" class="pile-slot" onclick="selectPile(2)"></div>
-            <button id="mulligan-btn" onclick="mulligan()">
+            <button id="mulligan-btn" class="btn btn--gold" onclick="mulligan()">
                 <span class="btn-icon"><i data-lucide="shuffle"></i></span> Otra Tanda (<span
                     id="mulligan-count">3</span>)
             </button>
@@ -108,6 +124,16 @@
                 </div>
 
                 <div class="help-section">
+                    <h3><i data-lucide="maximize" class="section-icon"></i> Tamaño del Tablero</h3>
+                    <p>Elige tu desafío en Configuración:</p>
+                    <ul class="clean-list">
+                        <li><b>Pequeño:</b> Rápido y letal (Radio 2).</li>
+                        <li><b>Normal:</b> Equilibrado (Radio 3).</li>
+                        <li><b>Grande:</b> Estrategia profunda (Radio 4).</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
                     <h3><i data-lucide="lightbulb" class="section-icon"></i> Tip Estratégico</h3>
                     <p>¿Tus fichas no se unen?</p>
                     <p>Es posible que hayas alcanzado el <b>Límite de Altura</b>. Aumenta este límite en <i
@@ -126,7 +152,12 @@
                 </div>
 
                 <div class="modal-buttons">
-                    <button id="close-help-btn" onclick="toggleHelp()">
+                    <a href="manual.html" class="btn btn--primary"
+                        style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i data-lucide="book-open-check"></i>
+                        VER MANUAL COMPLETO
+                    </a>
+                    <button id="close-help-btn" class="btn btn--gold-outline" onclick="toggleHelp()">
                         <i data-lucide="house"></i>
                         VOLVER
                     </button>
@@ -170,11 +201,11 @@
                 </div>
                 <!-- <div id="new-record" style="display: none;">🏆 ¡NUEVO RECORD!</div> -->
                 <div class="modal-buttons">
-                    <button id="restart-btn" onclick="restartGame()">
+                    <button id="restart-btn" class="btn btn--primary" onclick="restartGame()">
                         <i data-lucide="gamepad-2"></i>
                         NUEVO JUEGO
                     </button>
-                    <button id="ranking-btn" onclick="showRankingFromModal()">
+                    <button id="ranking-btn" class="btn btn--gold" onclick="showRankingFromModal()">
                         <i data-lucide="trophy"></i>
                         VER RANKING
                     </button>
@@ -191,28 +222,31 @@
                     SALÓN DE LA FAMA
                 </h2>
 
+                <h3 style="text-align: center; color: var(--color-gold); margin-bottom: 10px; font-size: 1rem;">Tamaño
+                    del Tablero</h3>
                 <div class="difficulty-segmented-control" style="margin-bottom: 20px;">
                     <button class="segment-btn ranking-filter" data-difficulty="2"
-                        onclick="showRankingModal(2)">Fácil</button>
+                        onclick="showRankingModal(2)">Pequeño</button>
                     <button class="segment-btn ranking-filter active" data-difficulty="3"
                         onclick="showRankingModal(3)">Normal</button>
                     <button class="segment-btn ranking-filter" data-difficulty="4"
-                        onclick="showRankingModal(4)">Difícil</button>
+                        onclick="showRankingModal(4)">Grande</button>
                 </div>
 
                 <div id="ranking-header-container"></div>
 
                 <div class="ranking-table-header">
                     <span>#</span>
-                    <span>Pilas</span>
-                    <span>Tiempo</span>
-                    <span>Fecha</span>
-                    <span>Hora</span>
+                    <span>NIVEL</span>
+                    <span>PILAS</span>
+                    <span>TIEMPO</span>
+                    <span>FECHA</span>
+                    <span>HORA</span>
                 </div>
                 <div id="full-scores-list"></div>
 
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
-                    <button class="close-ranking-btn" onclick="closeRanking()">
+                    <button class="close-ranking-btn btn btn--gold-outline" onclick="closeRanking()">
                         <i data-lucide="house"></i>
                         VOLVER
                     </button>
@@ -229,13 +263,13 @@
                 </h2>
 
                 <div class="config-card">
-                    <h3>Nivel de Dificultad</h3>
+                    <h3>Tamaño de Tablero</h3>
 
                     <div class="difficulty-segmented-control">
-                        <button class="segment-btn" data-difficulty="2" onclick="setDifficulty(2)">Fácil</button>
+                        <button class="segment-btn" data-difficulty="2" onclick="setDifficulty(2)">Pequeño</button>
                         <button class="segment-btn active" data-difficulty="3"
                             onclick="setDifficulty(3)">Normal</button>
-                        <button class="segment-btn" data-difficulty="4" onclick="setDifficulty(4)">Difícil</button>
+                        <button class="segment-btn" data-difficulty="4" onclick="setDifficulty(4)">Grande</button>
                     </div>
                     <div id="difficulty-description" class="config-desc-small">Radio 3 • 37 celdas</div>
                 </div>
@@ -261,14 +295,14 @@
                 </div>
 
                 <div class="config-actions">
-                    <button id="cancel-config-btn" onclick="toggleConfig()">
+                    <button id="cancel-config-btn" class="btn btn--gold-outline" onclick="toggleConfig()">
                         <i data-lucide="house"></i>
                         VOLVER
                     </button>
                 </div>
 
                 <div class="danger-zone-link">
-                    <button id="reset-data-btn" onclick="resetRankingsConfirm()">
+                    <button id="reset-data-btn" class="btn btn--danger" onclick="resetRankingsConfirm()">
                         <i data-lucide="trash-2"></i>
                         Resetear Rankings Data
                     </button>
@@ -277,7 +311,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=2"></script>
+    <script type="module" src="js/main.js?v=3.0"></script>
     <script>
         lucide.createIcons();
     </script>

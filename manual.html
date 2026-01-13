@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de HexaFlow</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css?v=3.0">
+    <style>
+        /* Aplicando ESTILO.md */
+        body {
+            background-color: var(--bg-root);
+            color: var(--text-main);
+            /* Font inherits from style.css body rule if not overridden, 
+               but manual.html has its own body style. 
+               Let's rely on style.css imports by adding class u-glass if needed 
+               or just matching the variables. */
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        .manual-container {
+            max-width: 800px;
+            width: 100%;
+            /* Glassmorphism base from ESTILO.md */
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+
+            border-radius: var(--radius-main);
+            padding: 40px;
+        }
+
+        h1 {
+            color: var(--text-main);
+            /* Logo style: Uppercase, Neon, Black weight */
+            font-weight: 900;
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            /* Cyan neon as per ESTILO logo */
+        }
+
+        h2 {
+            /* Section headers: Uppercase, ExtraBold, Relief Shadow */
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+            margin-top: 50px;
+            margin-bottom: 25px;
+
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 i {
+            color: var(--color-gold);
+            /* Gold icons for sections */
+        }
+
+        h3 {
+            color: var(--color-accent);
+            /* Sky 400 for subheaders */
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 1.1rem;
+        }
+
+        p,
+        li {
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            color: var(--text-muted);
+            /* Slate 300 */
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .concept-card {
+            /* Subtle Zone strategy from ESTILO.md section 6 */
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .concept-card h3 {
+            margin-top: 0;
+            color: var(--color-gold);
+            /* Gold emphasis inside cards */
+        }
+
+        .key-term {
+            color: var(--color-accent);
+            font-weight: bold;
+        }
+
+        .back-btn-container {
+            margin-top: 60px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="manual-container">
+        <h1>Manual de Operaciones</h1>
+        <p style="text-align: center;">HexaFlow: Strategic Honeycomb</p>
+
+        <section>
+            <h2><i data-lucide="target"></i> Objetivo Principal</h2>
+            <p>HexaFlow es un juego de estrategia y gestión de espacio. Tu misión es alcanzar la <span
+                    class="key-term">Meta de Puntos</span> antes de que el tablero se bloquee.</p>
+            <p>Para lograrlo, debes apilar fichas del mismo color. Cuando una pila crece, sus fichas superiores buscan
+                expandirse a celdas vecinas, creando <b>reacciones en cadena</b>.</p>
+        </section>
+
+        <section>
+            <h2><i data-lucide="shuffle"></i> Mecánica de Flujo</h2>
+            <div class="concept-card">
+                <h3>1. Colocación</h3>
+                <p>Tus pilas de reserva (abajo) entran al tablero. Si colocas una pila de 3 fichas azules sobre una
+                    celda vacía, esa celda ahora tiene 3 fichas azules.</p>
+            </div>
+            <div class="concept-card">
+                <h3>2. Expansión (El Salto)</h3>
+                <p>Si colocas fichas y hay vecinos del <b>mismo color</b>, las fichas saltarán para unirse a ellos. La
+                    regla de oro es:</p>
+                <p style="text-align: center; font-style: italic;">"El agua fluye hacia el río más grande".</p>
+                <p>Las fichas siempre saltarán hacia la pila vecina más alta del mismo color.</p>
+            </div>
+            <div class="concept-card">
+                <h3>3. Eliminación</h3>
+                <p>Cuando una pila alcanza o supera las <b>10 fichas</b> del mismo color, ¡COLAPSA! Las fichas se
+                    eliminan, ganas puntos y liberas espacio en el tablero.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2><i data-lucide="maximize"></i> Tamaños de Tablero</h2>
+            <p>Puedes configurar el tamaño del hexágono en el menú de Configuración. Esto cambia radicalmente la
+                estrategia:</p>
+
+            <h3>Pequeño (Radio 2)</h3>
+            <p>Un tablero íntimo con solo <b>19 celdas</b>. Las partidas son frenéticas. Es muy fácil quedarse sin
+                espacio ("Game Over"), por lo que cada movimiento debe buscar una eliminación inmediata.</p>
+
+            <h3>Normal (Radio 3)</h3>
+            <p>El equilibrio perfecto con <b>37 celdas</b>. Tienes espacio para preparar combos ("setups") de 2 o 3
+                pasos sin morir instantáneamente.</p>
+
+            <h3>Grande (Radio 4)</h3>
+            <p>Un campo de batalla de <b>61 celdas</b>. Ideal para grandes estrategas que quieren construir cadenas
+                masivas de eliminaciones. El peligro aquí no es el espacio, sino la dispersión de colores.</p>
+        </section>
+
+        <section>
+            <h2><i data-lucide="mountain"></i> Modo Ascensión</h2>
+            <p>El juego no termina al ganar una partida. Entras al <b>Modo Ascensión</b>.</p>
+            <p>Cada vez que completas la meta de puntos, avanzas de Nivel. Con cada nivel, aparecen nuevos desafíos:</p>
+
+            <ul>
+                <li><b>Nivel 1 (Archipiélago):</b> Rocas aisladas estorban tu expansión.</li>
+                <li><b>Nivel 2 (El Muro):</b> Una barrera divide tu tablero en dos.</li>
+                <li><b>Nivel 3 (El Bunker):</b> El centro está bloqueado, obligándote a jugar en los bordes.</li>
+                <li><b>Nivel 4 (Campo Minado):</b> Caos total con obstáculos aleatorios.</li>
+            </ul>
+
+            <p><span class="key-term">Rocas (Obstáculos):</span> Son celdas grises inamovibles. No puedes colocar fichas
+                en ellas ni saltar sobre ellas. Debes rodearlas.</p>
+        </section>
+
+        <section>
+            <h2><i data-lucide="gamepad-2"></i> Controles</h2>
+            <ul>
+                <li><b>Click izquierdo:</b> Seleccionar pila y colocar en tablero.</li>
+                <li><b>Flechas / WASD / Q-E:</b> Rotar la orientación de tus pilas de reserva.</li>
+                <li><b>Botón Mulligan ("Otra Tanda"):</b> Descarta tus fichas actuales y recibe nuevas. Úsalo
+                    sabiamente, ¡solo tienes 3 por partida!</li>
+            </ul>
+        </section>
+
+        <div class="back-btn-container">
+            <a href="index.html" class="btn btn--primary"
+                style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                <i data-lucide="play"></i> VOLVER AL JUEGO
+            </a>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

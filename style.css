@@ -2,23 +2,25 @@
    1. DESIGN TOKENS (Fuente de verdad)
    ========================================= */
 :root {
-    /* Paleta de Colores */
+    /* Paleta de Colores (V2.3) */
     --bg-root: #0f172a;
     /* Slate 900 */
-    --bg-panel: rgba(30, 41, 59, 0.6);
-    /* Slate 800 (Glass Base) */
-    --bg-modal: rgba(15, 23, 42, 0.95);
-    /* Overlay oscuro */
+    --bg-panel: rgba(30, 41, 59, 0.45);
+    /* Base para paneles Glass (Blur optimizado) */
+    --bg-modal: rgba(15, 23, 42, 0.98);
+    /* Fondo oscuro casi opaco */
 
-    --text-main: #f8fafc;
-    /* Slate 50 */
-    --text-muted: #94a3b8;
-    /* Slate 400 */
+    --text-main: #ffffff;
+    /* Blanco Puro */
+    --text-muted: #cbd5e1;
+    /* Slate 300 */
 
     --color-accent: #38bdf8;
-    /* Sky 400 (Acción/Neon) */
+    /* Sky 400 */
     --color-gold: #fbbf24;
-    /* Amber 400 (Rewards) */
+    /* Amber 400 */
+    --color-success: #10b981;
+    /* Emerald 500 */
     --color-danger: #ef4444;
     /* Red 500 */
 
@@ -30,17 +32,16 @@
     --space-xl: 32px;
 
     /* Bordes */
-    --radius-main: 12px;
+    --radius-main: 16px;
+    /* V2.3: 16px */
     --radius-pill: 50px;
 
     /* Capas (Z-Index System) */
     --z-back: -1;
     --z-board: 10;
     --z-ui: 100;
-    /* HUD, Controles */
     --z-modal: 1000;
-    /* Overlays */
-    --z-toast: 9999;
+    --z-nav: 9999;
 }
 
 /* =========================================
@@ -55,13 +56,24 @@ body {
     padding: 0;
     background-color: var(--bg-root);
     color: var(--text-main);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
+}
+
+/* =========================================
+   2.1 ACCESIBILIDAD (PREFERS-REDUCED-MOTION)
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* =========================================
@@ -75,10 +87,24 @@ body {
 .pile-slot,
 .config-card {
     background: var(--bg-panel);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Zona Sutil para Modales (No-Line Strategy) */
+.u-subtle-zone,
+.config-card,
+.help-section,
+.stat-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 /* =========================================
@@ -111,6 +137,24 @@ canvas {
     z-index: var(--z-ui);
     pointer-events: none;
     /* Click-through */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+#level-indicator {
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--color-gold);
+    border: 1px solid var(--color-gold);
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-out;
 }
 
 .hud-buttons {
@@ -222,16 +266,118 @@ canvas {
 /* =========================================
    7. PANELES DE JUEGO (Bottom Stats & Controls)
    ========================================= */
+
+/* =========================================
+   7. PANELES DE JUEGO (Bottom Stats & Controls)
+   ========================================= */
+
+/* Wrapper para alineación perfecta */
+#dashboard-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    /* Espacio entre barra y panel */
+    margin-bottom: var(--space-lg);
+    z-index: var(--z-ui);
+    width: auto;
+    align-self: center;
+}
+
+/* Barra de Progreso (Flotante pero anclada al ancho del panel) */
+#goal-progress-container {
+    width: 100%;
+    /* Hereda el ancho del wrapper */
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    /* Padding matches #bottom-stats padding to align edges perfectly */
+    box-sizing: border-box;
+}
+
+#goal-progress-bar {
+    width: 100%;
+    height: 8px;
+    /* Slightly thicker */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-pill);
+    position: relative;
+    /* Context for overflow hidden if needed, but we want label to pop out */
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+#goal-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--color-accent), #0ea5e9);
+    box-shadow: 0 0 12px var(--color-accent);
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: var(--radius-pill);
+    position: relative;
+    /* Important: Logic ensures this div grows */
+}
+
+/* Shine effect */
+#goal-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-20deg) translateX(-150%);
+    animation: shimmer 2s infinite;
+    border-radius: var(--radius-pill);
+}
+
+@keyframes shimmer {
+    100% {
+        transform: skewX(-20deg) translateX(250%);
+    }
+}
+
+#goal-progress-label {
+    position: absolute;
+    right: 0;
+    top: -24px;
+    /* Floating above the bar tip */
+    transform: translateX(50%);
+    /* Centered on the tip */
+
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--color-accent);
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    background: rgba(15, 23, 42, 0.8);
+    /* Tiny background to read against busy bg */
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+
+    font-family: monospace;
+    opacity: 0;
+    /* Hidden initially or at 0? Let's show it always or fade in */
+    animation: fadeIn 0.5s forwards;
+    transition: opacity 0.3s;
+}
+
+/* Show label only when there is progress? Optional. 
+   For now, visible 0% is fine, it will sit at the very left. 
+*/
+
+/* Panel Estadísticas (El Ancla dimensional) */
 #bottom-stats {
     display: flex;
     justify-content: center;
     gap: 40px;
-    padding: 15px 30px;
-    margin-bottom: var(--space-lg);
+    padding: 15px 40px;
+    /* Keep consistent padding */
+    margin-bottom: 0;
+    /* Wrapper maneja el margen */
     border-radius: 16px;
-    z-index: var(--z-ui);
-    width: auto;
-    align-self: center;
+    min-width: 350px;
+    /* Ancho mínimo forzado para simetría constante */
 }
 
 .stat-item {
@@ -239,18 +385,31 @@ canvas {
     flex-direction: column;
     align-items: center;
     line-height: 1;
+    position: relative;
+}
+
+.mini-label {
+    font-size: 0.7rem;
+    color: var(--color-accent);
+    position: absolute;
+    top: -12px;
+    right: -10px;
+    opacity: 0.8;
 }
 
 .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--color-accent);
+    /* Keep accent color */
     letter-spacing: 1.5px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     text-transform: uppercase;
+    font-weight: 700;
+    opacity: 0.8;
 }
 
 .stat-num {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: white;
     transition: transform 0.2s, color 0.2s;
@@ -445,20 +604,9 @@ canvas {
 }
 
 /* Config Items - Cleaner "Cardless" Look -> Ahora "Subtle Zones" */
+/* .config-card is now handled by .u-subtle-zone utility above */
 .config-card {
-    background: rgba(255, 255, 255, 0.03);
-    /* Fondo sutil para separar */
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    /* Borde sutil */
-    box-shadow: none;
-    border-radius: 12px;
-    /* Bordes redondeados */
-    padding: 20px;
-    /* Padding interno */
     margin-bottom: 20px;
-    /* Separación entre tarjetas */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
 }
 
 /* Remover reglas anteriores que eliminaban bordes/fondos */
@@ -566,6 +714,7 @@ canvas {
 /* Estilos específicos Modal Game Over */
 .gameover-content h2 {
     background: linear-gradient(135deg, #ef4444, #f97316, #eab308);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: pulse 2s infinite;
@@ -639,7 +788,8 @@ canvas {
 
 .ranking-table-header {
     display: grid;
-    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
+    /* # | NIVEL | PILAS | TIEMPO | FECHA | HORA */
+    grid-template-columns: 40px 60px 1fr 1fr 1fr 1fr;
     background: rgba(30, 41, 59, 0.8);
     padding: 15px;
     border-radius: 8px 8px 0 0;
@@ -648,14 +798,20 @@ canvas {
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 1px;
+    gap: 10px;
+    text-align: center;
 }
 
 .ranking-row {
     display: grid;
-    grid-template-columns: 0.5fr 1fr 1fr 1.5fr 1fr;
+    /* # | NIVEL | PILAS | TIEMPO | FECHA | HORA */
+    grid-template-columns: 40px 60px 1fr 1fr 1fr 1fr;
     padding: 12px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     font-size: 0.9rem;
+    gap: 10px;
+    text-align: center;
+    align-items: center;
 }
 
 .ranking-row.gold {
@@ -667,69 +823,113 @@ canvas {
    9. COMPONENTES DE UI (INPUTS & BOTONES)
    ========================================= */
 
-/* Botones Genéricos (Action Buttons) */
-#restart-btn,
-#ranking-btn,
-#view-ranking-btn,
-#new-game-btn {
-    border: none;
-    padding: 15px 30px;
+/* 9.1 BOTONES (.btn) - BEM Implementation */
+.btn {
+    padding: 0.75rem 1.5rem;
     border-radius: var(--radius-main);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: flex;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    letter-spacing: 0.5px;
+    border: none;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
 }
 
-/* Variante Azul (Primary) */
-#new-game-btn,
-#restart-btn {
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+}
+
+.btn:active:not(:disabled) {
+    transform: scale(0.96) translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(80%);
+}
+
+/* Variantes */
+.btn--primary {
     background: linear-gradient(135deg, var(--color-accent), #0284c7);
     color: white;
     box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
 }
 
-/* Variante Gold (Secondary/Ranking) */
-/* Segmented Control */
-.difficulty-segmented-control {
-    display: flex;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    padding: 4px;
-    gap: 4px;
-    justify-content: center;
-    /* Center the buttons */
-    max-width: 400px;
-    /* Limit width to look better centered */
-    margin: 0 auto 20px auto;
-    /* Center the container itself */
-}
-
-/* ... existing code ... */
-
-/* Variante Gold (Secondary/Ranking) - ANTIGUO REFACTORIZADO */
-
-#ranking-btn,
-#view-ranking-btn {
+.btn--gold {
     background: linear-gradient(135deg, var(--color-gold), #d97706);
     color: white;
     box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
 }
 
-/* Botón Volver estilo Mulligan */
-/* Botones Volver unificados arriba con #mulligan-btn */
-/* .close-ranking-btn definition moved up */
+.btn--gold-outline {
+    background: rgba(251, 191, 36, 0.1);
+    border: 2px solid var(--color-gold);
+    color: var(--color-gold);
+    border-radius: var(--radius-pill);
+    /* Special case per Estilo */
+}
 
-/* Hover Effects */
-button:hover {
+.btn--danger {
+    background: var(--color-danger);
+    color: white;
+}
+
+/* Legacy ID Support mapping - Manual inclusion since @extend is not supported */
+#restart-btn,
+#new-game-btn {
+    /* Duplicate of .btn + .btn--primary rules */
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-main);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: 0.5px;
+    border: none;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+
+    /* Primary color */
+    background: linear-gradient(135deg, var(--color-accent), #0284c7);
+    color: white;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+}
+
+#mulligan-btn {
+    /* Special circular pill style from previous design, now unified?
+       ESTILO.md V2.3 just says .btn--gold or gold-outline.
+       Let's keep specific override if needed but try to harmonize */
+    background: rgba(251, 191, 36, 0.1);
+    color: var(--color-gold);
+    border: 1px solid var(--color-gold);
+    border-radius: 50px;
+    padding: 12px 32px;
+}
+
+#mulligan-btn:hover {
+    background: rgba(251, 191, 36, 0.25);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
     transform: translateY(-2px);
-    filter: brightness(1.1);
+}
+
+/* Hover Effects Generic */
+button:hover {
+    /* Keep generic fallback */
+    transform: translateY(-2px);
 }
 
 /* Sliders */
@@ -739,10 +939,13 @@ input[type="range"] {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 2px;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
+    /* Fix lint: appearance */
     -webkit-appearance: none;
+    appearance: none;
     width: 16px;
     height: 16px;
     background: var(--color-accent);
@@ -751,7 +954,19 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 0 10px var(--color-accent);
 }
 
-/* Segmented Control Styles Unified - already declared above, removing duplicate/base styles here but keeping button styles */
+/* Segmented Control Styles Unified */
+.difficulty-segmented-control {
+    display: flex;
+    flex-direction: row;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+    justify-content: center;
+    max-width: 400px;
+    margin: 0 auto 20px auto;
+    width: 100%;
+}
 
 .segment-btn {
     flex: 1;

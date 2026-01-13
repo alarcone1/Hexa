@@ -4,6 +4,7 @@ export const state = {
     mulligans: 3,
     numColors: 3,
     difficulty: 2,
+    level: 1, // Nuevo: Nivel actual de Ascensión
     maxStackHeight: 15,
     moves: 0,
     startTime: null,

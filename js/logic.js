@@ -1,8 +1,8 @@
-import { state, hexRadius, setHexRadius } from './state.js';
-import { COLORS } from './constants.js';
-import { getNeighbors } from './utils.js';
-import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js';
-import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver } from './ui.js';
+import { state, hexRadius, setHexRadius } from './state.js?v=3.0';
+import { COLORS } from './constants.js?v=3.0';
+import { getNeighbors } from './utils.js?v=3.0';
+import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=3.0';
+import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver } from './ui.js?v=3.0';
 
 // --- INITIALIZATION ---
 export function initBoard() {
@@ -16,6 +16,92 @@ export function initBoard() {
         }
     }
     setHexRadius(radius);
+
+    // ASCENSION MODE: Apply Layout
+    applyLevelLayout(state.level);
+
+    // Update Level Indicator
+    const levelInd = document.getElementById('level-indicator');
+    if (levelInd) levelInd.innerText = `NIVEL ${state.level}`;
+}
+
+function applyLevelLayout(level) {
+    const scenario = (level - 1) % 4; // Cycle 0-3
+    const centerQ = 0, centerR = 0;
+
+    // Nivel 1: Archipiélago (Introducción)
+    if (scenario === 0) {
+        // 3 Rocas en bordes (approx coordinates dependent on radius, hardcoding for r=3 general feel)
+        addObstacle(state.difficulty, 0);
+        addObstacle(-state.difficulty, 0);
+
+        // 3 Pilas bajas en centro
+        addRandomPile(0, 0, 3);
+        addRandomPile(1, -1, 3);
+        addRandomPile(-1, 1, 3);
+    }
+
+    // Nivel 2: El Muro
+    else if (scenario === 1) {
+        // Muro vertical
+        for (let i = -1; i <= 2; i++) {
+            addObstacle(0, i);
+        }
+        addRandomPile(1, 0, 5);
+        addRandomPile(-1, 0, 5);
+    }
+
+    // Nivel 3: El Bunker
+    else if (scenario === 2) {
+        // Centro protegido
+        const neighbors = getNeighbors(0, 0);
+        neighbors.forEach(n => addObstacle(n.q, n.r));
+        addRandomPile(0, 0, 8); // Pila alta atrapada? No, el bunker es el anillo.
+    }
+
+    // Nivel 4: Campo Minado
+    else if (scenario === 3) {
+        const rocks = 4 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < rocks; i++) addRandomObstacle();
+
+        const piles = 5;
+        for (let i = 0; i < piles; i++) addRandomPile(null, null, 10 + Math.floor(Math.random() * 4));
+    }
+}
+
+function addObstacle(q, r) {
+    const key = `${q},${r}`;
+    if (state.board.has(key)) {
+        // Obstacle is represented by a special "ROCK" chip or state.
+        // For now, let's use a specific visually distinct hack if we don't have rock assets.
+        // Or better, just mark it. Assuming 'ROCK' is not in COLORS.
+        // We will need to update Graphics to render this.
+        state.board.set(key, { chips: ['ROCK'], isObstacle: true });
+    }
+}
+
+function addRandomObstacle() {
+    const keys = Array.from(state.board.keys());
+    const rndKey = keys[Math.floor(Math.random() * keys.length)];
+    const [q, r] = rndKey.split(',').map(Number);
+    addObstacle(q, r);
+}
+
+function addRandomPile(forcedQ, forcedR, height) {
+    let q = forcedQ, r = forcedR;
+    if (q === null) {
+        const keys = Array.from(state.board.keys());
+        const rndKey = keys[Math.floor(Math.random() * keys.length)];
+        [q, r] = rndKey.split(',').map(Number);
+    }
+
+    const key = `${q},${r}`;
+    const cell = state.board.get(key);
+    if (cell && !cell.isObstacle) {
+        for (let i = 0; i < height; i++) {
+            cell.chips.push(COLORS[Math.floor(Math.random() * state.numColors)]);
+        }
+    }
 }
 
 export function generatePile() {

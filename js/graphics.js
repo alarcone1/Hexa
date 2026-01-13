@@ -1,7 +1,7 @@
-import { HEX_SIZE, COLORS } from './constants.js';
+import { HEX_SIZE, COLORS } from './constants.js?v=3.0';
 
-import { state } from './state.js';
-import { axialToPixel, adjustColor } from './utils.js';
+import { state } from './state.js?v=3.0';
+import { axialToPixel, adjustColor } from './utils.js?v=3.0';
 
 export class Particle {
     constructor(x, y, color) {
@@ -142,6 +142,9 @@ export class EliminationEffect {
 
 export class AnimatedChip {
     constructor(fromQ, fromR, toQ, toR, color, duration = 250) {
+        // Fallback for non-hex colors (like ROCK) to prevent adjustColor crash
+        if (color === 'ROCK') color = '#475569'; // Slate 600
+
         const from = axialToPixel(fromQ, fromR);
         const to = axialToPixel(toQ, toR);
         this.startX = from.x;
@@ -330,8 +333,33 @@ export function drawHexChips(ctx, q, r, chips) {
     ctx.restore();
 }
 
+const CHIP_RADIUS = HEX_SIZE * 0.85; // Helper constant
+
 function drawSingleChip(ctx, color) {
-    const size = HEX_SIZE * 0.85;
+    const size = CHIP_RADIUS;
+
+    // OBSTACLE RENDERING
+    if (color === 'ROCK') {
+        ctx.fillStyle = '#475569'; // Slate 600
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            ctx.lineTo(size * Math.cos(angle), size * Math.sin(angle));
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Simular rugosidad o detalle
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.arc(-5, -5, 4, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+    }
 
     ctx.beginPath();
     const vertices = [];

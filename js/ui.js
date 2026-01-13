@@ -1,7 +1,7 @@
-import { state } from './state.js';
-import { COLORS } from './constants.js';
-import { formatTime } from './utils.js';
-import { spawnConfetti } from './graphics.js';
+import { state } from './state.js?v=3.0';
+import { COLORS } from './constants.js?v=3.0';
+import { formatTime } from './utils.js?v=3.0';
+import { spawnConfetti } from './graphics.js?v=3.0';
 
 // Elementos del DOM
 const scoreEl = document.getElementById('score');
@@ -25,6 +25,38 @@ export function updateStat(id, value) {
             el.classList.add('changed');
         } else {
             el.innerText = value;
+        }
+    }
+
+    // Update Progress Bar if score or goal changes
+    if (id === 'score' || id === 'goal') {
+        updateGoalProgress();
+    }
+}
+
+function updateGoalProgress() {
+    const bar = document.getElementById('goal-progress-fill');
+    const label = document.getElementById('goal-progress-label');
+    // Ensure state.goal is valid to avoid division by zero
+    const goal = state.goal || 100;
+    // Use the value passed to updateStat? No, read from state is safer for 'goal' context
+    // Actually logic.js updates state.score before calling updateStat.
+
+    if (bar && label) {
+        const pct = Math.min(100, Math.floor((state.score / goal) * 100));
+        bar.style.width = `${pct}%`;
+        label.innerText = `${pct}%`;
+
+        // Hide label if 0% to avoid clutter, show if > 0%
+        label.style.opacity = pct > 0 ? '1' : '0';
+
+        // Optional: Change color if near goal?
+        if (pct >= 80) {
+            bar.style.boxShadow = '0 0 15px var(--color-gold)';
+            label.style.color = 'var(--color-gold)';
+        } else {
+            bar.style.boxShadow = '0 0 12px var(--color-accent)';
+            label.style.color = 'var(--color-accent)';
         }
     }
 }
@@ -112,31 +144,54 @@ export function gameWin() {
     if (state.isGameOver) return;
     state.isGameOver = true;
 
-    // Guardar Score (importaremos saveScore o lo moveremos aquí?)
-    // saveScore es logica de persistencia, mejor en un helpers o aqui mismo.
-    saveScore(true);
-
-    // UI
-    spawnConfetti();
+    try {
+        saveScore(true);
+        state.level++;
+        spawnConfetti();
+    } catch (e) {
+        console.error("Error in gameWin (stats/confetti):", e);
+    }
 
     // Retrasar modal para ver la celebración
     setTimeout(() => {
-        document.getElementById('modal-title').innerText = "🏆 ¡NIVEL COMPLETADO!";
-        document.getElementById('final-moves').innerText = state.moves;
-        const timeTotal = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
-        document.getElementById('final-time').innerText = formatTime(timeTotal);
+        try {
+            document.getElementById('modal-title').innerText = "🏆 ¡NIVEL COMPLETADO!";
 
-        const bestComboRow = document.getElementById('best-combo').parentNode;
-        const totalElimRow = document.getElementById('total-eliminated').parentNode;
-        if (bestComboRow) bestComboRow.style.display = 'flex';
-        if (totalElimRow) totalElimRow.style.display = 'flex';
+            // Change button text to "SIGUIENTE NIVEL"
+            const restartBtn = document.getElementById('restart-btn');
+            if (restartBtn) {
+                restartBtn.innerHTML = '<i data-lucide="arrow-right"></i> SIGUIENTE NIVEL';
+                restartBtn.onclick = () => {
+                    if (window.restartGame) {
+                        window.restartGame(true);
+                    } else {
+                        console.error("restartGame not found on window");
+                        location.reload();
+                    }
+                };
+            }
 
-        document.getElementById('best-combo').innerText = state.stats.bestCombo;
-        document.getElementById('total-eliminated').innerText = state.stats.totalEliminated;
+            document.getElementById('final-moves').innerText = state.moves;
+            const timeTotal = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
+            document.getElementById('final-time').innerText = formatTime(timeTotal);
+
+            const bestComboRow = document.getElementById('best-combo').parentNode;
+            const totalElimRow = document.getElementById('total-eliminated').parentNode;
+            if (bestComboRow) bestComboRow.style.display = 'flex';
+            if (totalElimRow) totalElimRow.style.display = 'flex';
+
+            document.getElementById('best-combo').innerText = state.stats.bestCombo;
+            document.getElementById('total-eliminated').innerText = state.stats.totalEliminated;
+        } catch (uiError) {
+            console.error("Error updating Game Win Modal UI:", uiError);
+        }
 
         gameoverModal.classList.add('active');
-    }, 5000);
+        if (window.lucide) window.lucide.createIcons();
+    }, 1500);
 }
+
+
 
 export function saveScore(isWin) {
     if (!isWin) return;
@@ -154,15 +209,20 @@ export function saveScore(isWin) {
         time: timeSeconds,
         date: new Date().toLocaleDateString(),
         timestamp: Date.now(),
-        score: state.score
+        score: state.score,
+        level: state.level // Save Level
     };
 
     allScores[state.difficulty].push(newEntry);
 
-    // CRITERIO DE RANKING:
-    // 1. Menos Movimientos (Ascendente)
-    // 2. Menos Tiempo (Ascendente)
+    // CRITERIO DE RANKING (ASCENSIÓN):
+    // 1. Mayor Nivel (Descendente)
+    // 2. Menos Movimientos (Ascendente)
+    // 3. Menos Tiempo (Ascendente)
     allScores[state.difficulty].sort((a, b) => {
+        const lvA = a.level || 1;
+        const lvB = b.level || 1;
+        if (lvA !== lvB) return lvB - lvA; // Higher level = better
         if (a.moves !== b.moves) return a.moves - b.moves;
         return a.time - b.time;
     });
@@ -185,6 +245,10 @@ export function toggleConfig() {
 export function updateDifficultyButtons() {
     document.querySelectorAll('.segment-btn').forEach(btn => {
         const diff = parseInt(btn.dataset.difficulty);
+        // Rename Labels
+        if (diff === 2) btn.innerText = "Pequeño";
+        if (diff === 3) btn.innerText = "Normal";
+        if (diff === 4) btn.innerText = "Grande";
         btn.classList.toggle('active', diff === state.difficulty);
     });
 
@@ -255,6 +319,7 @@ export function showRankingModal(forceDifficulty = null) {
             return `
             <div class="ranking-row ${medalClass}">
                 <span>${i + 1}</span>
+                <span style="color: var(--color-gold); font-weight: bold;">${s.level || 1}</span>
                 <span>${s.moves}</span>
                 <span>${formatTime(s.time)}</span>
                 <span>${dateStr}</span>

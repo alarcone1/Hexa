@@ -1,6 +1,6 @@
-import { state, hexRadius } from './state.js';
-import { COLORS } from './constants.js';
-import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js';
+import { state, hexRadius } from './state.js?v=3.0';
+import { COLORS } from './constants.js?v=3.0';
+import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=3.0';
 import {
     updateStat,
     updatePileUI,
@@ -15,13 +15,13 @@ import {
     updateHeightLabel,
     saveScore,
     filterRankingByDifficulty
-} from './ui.js';
+} from './ui.js?v=3.0';
 import {
     drawHexBackground,
     drawHexChips,
     drawFlowArrow
-} from './graphics.js';
-import { pixelToAxial } from './utils.js';
+} from './graphics.js?v=3.0';
+import { pixelToAxial } from './utils.js?v=3.0';
 
 const canvas = document.getElementById('gameCanvas');
 if (!canvas) console.error("Canvas element not found!");
