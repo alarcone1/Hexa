@@ -105,12 +105,72 @@ function addRandomPile(forcedQ, forcedR, height) {
 }
 
 export function generatePile() {
+    // Si el tablero está muy lleno, usamos lógica de "Amistad"
+    let emptyCells = 0;
+    state.board.forEach(cell => { if (cell.chips.length === 0) emptyCells++; });
+
+    // Umbral de "Amistad": menos del 20% del tablero vacío o si se pide explícitamente (mulligan)
+    const boardSize = state.board.size;
+    if (emptyCells < boardSize * 0.2) {
+        return generateFriendshipPile();
+    }
+
     const size = 2 + Math.floor(Math.random() * 3);
     const chips = [];
     for (let i = 0; i < size; i++) {
         chips.push(COLORS[Math.floor(Math.random() * state.numColors)]);
     }
     return chips;
+}
+
+/**
+ * Algoritmo de Amistad: Genera una pila basada en las necesidades estratégicas del tablero.
+ */
+function generateFriendshipPile() {
+    const analysis = analyzeBoardFriendly();
+
+    // Determinar tamaño de la pila (Balance de Altura)
+    // Si hay mucha saturación, pilas pequeñas (2-3). Si no, normal (2-5).
+    let maxHeight = 0;
+    state.board.forEach(cell => { maxHeight = Math.max(maxHeight, cell.chips.length); });
+
+    const saturation = maxHeight / state.maxStackHeight;
+    const size = saturation > 0.7 ? (2 + Math.floor(Math.random() * 2)) : (2 + Math.floor(Math.random() * 3));
+
+    const chips = [];
+    for (let i = 0; i < size; i++) {
+        // Mix Genético: 50% Cierre (Top), 50% Semilla (Under)
+        if (Math.random() > 0.5 && analysis.topColors.length > 0) {
+            chips.push(analysis.topColors[Math.floor(Math.random() * analysis.topColors.length)]);
+        } else if (analysis.underColors.length > 0) {
+            chips.push(analysis.underColors[Math.floor(Math.random() * analysis.underColors.length)]);
+        } else {
+            // Fallback al azar si no hay análisis claro
+            chips.push(COLORS[Math.floor(Math.random() * state.numColors)]);
+        }
+    }
+    return chips;
+}
+
+function analyzeBoardFriendly() {
+    const topColors = [];
+    const underColors = [];
+
+    state.board.forEach((cell) => {
+        if (cell.chips.length >= 7 && !cell.isObstacle) {
+            const topColor = cell.chips[cell.chips.length - 1];
+            topColors.push(topColor);
+
+            // Buscar "Semilla" (color debajo del bloque superior)
+            const seedColor = peekUnderColor(cell, topColor);
+            if (seedColor) underColors.push(seedColor);
+        }
+    });
+
+    return {
+        topColors: [...new Set(topColors)], // Únicos
+        underColors: [...new Set(underColors)]
+    };
 }
 
 export function refillPlayerPiles() {
@@ -126,7 +186,12 @@ export function refillPlayerPiles() {
 export function mulligan() {
     if (state.mulligans > 0 && !state.isAnimating && !state.isHelpOpen) {
         state.mulligans--;
-        state.playerPiles = [generatePile(), generatePile(), generatePile()];
+        // El Mulligan SIEMPRE usa el Algoritmo de Amistad
+        state.playerPiles = [
+            generateFriendshipPile(),
+            generateFriendshipPile(),
+            generateFriendshipPile()
+        ];
         updatePileUI();
     }
 }

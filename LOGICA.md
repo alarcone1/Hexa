@@ -76,3 +76,16 @@ El juego implementa "Presets de Balanceo" (`DIFFICULTY_PRESETS`) que ajustan las
 | **Fácil** | 2 (19 celdas) | 100 | 25 | Tablero pequeño, pilas muy altas permitidas. Ideal para aprender. |
 | **Normal** | 3 (37 celdas) | 200 | 20 | Balance estándar. Requiere gestión de espacio. |
 | **Difícil** | 4 (61 celdas) | 300 | 15 | Tablero grande, pero las pilas se bloquean rápido (15). Requiere High-IQ combos. |
+79: 
+80: ## Sistema de Amistad (Recambio Inteligente)
+81: 
+82: Cuando el jugador solicita un recambio de pilas (Trash/Refill), la App no genera colores aleatorios. En su lugar, ejecuta el **"Algoritmo de Amistad"** para actuar como un aliado estratega:
+83: 
+84: 1.  **Análisis de Revelación**: El sistema escanea las pilas actuales. Busca aquellas que están cerca de su límite (>= 7 fichas) y "mira" qué color hay debajo de la capa superior.
+85: 2.  **Selección Provocadora (Mix Genético)**:
+86:     -   **Componente A (Cierre)**: Incluye 1 o 2 fichas del color superior actual para ayudar al jugador a completar la pila y eliminarla pronto.
+87:     -   **Componente B (Semilla)**: Incluye fichas del color que está inmediatamente debajo (la "revelación"). Esto asegura que, una vez que el jugador limpie la capa superior, ya tenga piezas en mano para continuar el flujo con el color revelado.
+88: 3.  **Balance de Altura**: Si el tablero está muy saturado, el algoritmo prioriza generar pilas de tamaño 2 o 3 en lugar de 5, para dar "aire" al jugador y evitar el Game Over inmediato.
+89: 
+90: > [!TIP]
+91: > Este sistema transforma el botón de recambio en un "botón de estrategia" que el jugador aprende a usar no solo para descartar lo que no quiere, sino para pedir ayuda táctica cuando el tablero se complica.
