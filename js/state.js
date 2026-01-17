@@ -13,6 +13,7 @@ export const state = {
     selectedPileIndex: null,
     rotation: 0,
     rotationSpeed: 0,
+    scale: 1, // Nuevo: Escala dinámica
     keysPressed: { ArrowLeft: false, ArrowRight: false },
     isGameOver: false,
     isConfigOpen: false,
@@ -26,7 +27,11 @@ export const state = {
         bestCombo: 0,
         currentCombo: 0,
         totalEliminated: 0
-    }
+    },
+    // Configuración de Amistad y Estrategia (Dinámica)
+    friendshipThreshold: 0.4, // 40% de ocupación activa ayuda
+    revealBonus: 150,        // Puntos por revelar jugadas
+    analysisHeight: 5        // Altura mínima para predecir necesidades
 };
 
 export let hexRadius = 2;

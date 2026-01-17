@@ -63,6 +63,11 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
+    padding: 20px;
+    /* Evitar que toque bordes en pantallas pequeñas */
+    background: var(--bg-root) !important;
+    filter: none !important;
+    backdrop-filter: none !important;
 }
 
 /* =========================================
@@ -113,11 +118,21 @@ body {
 #game-container {
     position: relative;
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
+    /* Un poco más ancho */
     height: 100%;
+    max-height: 900px;
+    /* Limitar altura para no estirarse al infinito */
     display: flex;
     flex-direction: column;
     z-index: var(--z-board);
+    /* Limpiar sombras o fondos residuales con mayor prioridad */
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 canvas {
@@ -125,6 +140,9 @@ canvas {
     touch-action: none;
     width: 100%;
     height: 100%;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
 /* =========================================
@@ -132,15 +150,15 @@ canvas {
    ========================================= */
 #hud {
     position: absolute;
-    top: var(--space-lg);
-    left: var(--space-lg);
+    top: var(--space-md);
+    left: var(--space-md);
     z-index: var(--z-ui);
     pointer-events: none;
     /* Click-through */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-md);
+    gap: var(--space-sm);
 }
 
 #level-indicator {
@@ -221,10 +239,10 @@ canvas {
    ========================================= */
 #active-colors-sidebar {
     position: absolute;
-    right: var(--space-lg);
-    top: var(--space-lg);
+    right: var(--space-md);
+    top: var(--space-md);
     z-index: var(--z-ui);
-    padding: var(--space-md);
+    padding: var(--space-sm);
     border-radius: 16px;
     display: flex;
     flex-direction: column;
@@ -603,41 +621,107 @@ canvas {
     /* Centrado vertical en flex container con scroll */
 }
 
+/* Rediseño Panel Avanzado */
+.advanced-panel {
+    max-width: 900px !important;
+    /* Panel más ancho unificado */
+}
+
+.config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Dos columnas */
+    gap: 30px;
+    margin-bottom: 40px;
+    text-align: left;
+    align-items: stretch;
+    /* Asegura que las cajas en la misma fila tengan el mismo alto */
+}
+
+.config-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (max-width: 850px) {
+
+    .config-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-icon {
+    color: var(--color-gold);
+    margin-right: 8px;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: bottom;
+}
+
 /* Config Items - Cleaner "Cardless" Look -> Ahora "Subtle Zones" */
 /* .config-card is now handled by .u-subtle-zone utility above */
 .config-card {
-    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* Contorno unificado */
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100%;
+    /* Ocupar todo el espacio de la fila */
 }
 
-/* Remover reglas anteriores que eliminaban bordes/fondos */
-/* .config-card:last-of-type { border-bottom: none; } <- Ya no aplica */
+/* Borrar .config-card.highlighted ya que buscamos simetría total */
 
-/* Headers de Modales */
+.config-card.highlighted {
+    background: rgba(56, 189, 248, 0.05);
+    /* Sutil tinte azul para destacar Amistad/IA */
+    border-color: rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.05);
+}
+
+.config-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--color-accent);
+}
+
+.config-card h3 i {
+    width: 20px;
+    height: 20px;
+}
+
+/* Headers de Modales - SIMETRÍA UNIFICADA */
 .config-content h2,
 .ranking-content h2,
-.gameover-content h2 {
+.gameover-content h2,
+.help-content h2 {
     font-size: 2rem;
     margin-bottom: 30px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    font-weight: 700;
-}
-
-/* Estilos específicos Modal Config */
-/* Estilos específicos Modal Config - REDISEÑADO */
-.config-content h2 {
-    color: var(--text-main);
-    /* Removed blue shadow/glow for cleaner look */
-    margin-bottom: 40px;
+    font-weight: 800;
+    /* Más peso para elegancia */
+    color: var(--color-gold) !important;
+    /* Oro por defecto para simetría */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
 }
 
 .config-icon-title {
     width: 1.2em;
     height: 1.2em;
-    vertical-align: bottom;
-    margin-right: 10px;
-    color: var(--text-muted);
-    /* Icono más sutil */
+    color: var(--color-gold) !important;
+    /* Iconos dorados consistentes */
 }
 
 /* Config Items - Styles handled above in unified block */
@@ -669,6 +753,7 @@ canvas {
     width: 100%;
     display: flex;
     justify-content: center;
+    gap: 20px;
 }
 
 /* #cancel-config-btn definition moved up to group with #mulligan-btn */
@@ -1071,8 +1156,15 @@ input[type="range"]::-webkit-slider-thumb {
     text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.3s;
+    visibility: hidden;
+    /* Asegurar que no afecte el renderizado */
+    transition: opacity 0.3s, visibility 0.3s;
     z-index: var(--z-modal);
+}
+
+#message-overlay.active {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* =========================================

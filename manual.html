@@ -12,21 +12,23 @@
         body {
             background-color: var(--bg-root);
             color: var(--text-main);
-            /* Font inherits from style.css body rule if not overridden, 
-               but manual.html has its own body style. 
-               Let's rely on style.css imports by adding class u-glass if needed 
-               or just matching the variables. */
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            padding: 40px 20px;
-            overflow-y: auto;
+            margin: 0;
+            padding: 80px 20px;
             min-height: 100vh;
+            height: auto !important;
+            /* Desbloquear altura fija */
+            overflow: auto !important;
+            /* Forzar scroll del navegador */
+            display: block !important;
+            /* Desactivar centrado flex del juego */
         }
 
         .manual-container {
             max-width: 800px;
             width: 100%;
+            margin: 0 auto 100px auto;
+            /* Centrado y margen extra abajo */
             /* Glassmorphism base from ESTILO.md */
             background: var(--bg-panel);
             backdrop-filter: blur(20px);
@@ -36,6 +38,7 @@
 
             border-radius: var(--radius-main);
             padding: 40px;
+            box-sizing: border-box;
         }
 
         h1 {
@@ -46,23 +49,25 @@
             text-align: center;
             font-size: 3rem;
             margin-bottom: 30px;
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-            /* Cyan neon as per ESTILO logo */
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+            /* Glow dorado más suave */
         }
 
         h2 {
             /* Section headers: Uppercase, ExtraBold, Relief Shadow */
             font-weight: 800;
             text-transform: uppercase;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+            /* Unificado con modales */
 
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding-bottom: 15px;
             margin-top: 50px;
             margin-bottom: 25px;
 
-            color: var(--text-main);
+            color: var(--color-gold);
+            /* UNIFICADO: ORO */
             display: flex;
             align-items: center;
             gap: 15px;
@@ -71,7 +76,8 @@
 
         h2 i {
             color: var(--color-gold);
-            /* Gold icons for sections */
+            width: 1.2em;
+            height: 1.2em;
         }
 
         h3 {
@@ -201,12 +207,39 @@
         </section>
 
         <section>
+            <h2><i data-lucide="settings-2"></i> Centro de Control</h2>
+            <p>Desde el icono de configuración <i data-lucide="settings-2"
+                    style="width: 1em; vertical-align: middle;"></i> puedes acceder al **Centro de Control**, donde
+                calibras la dificultad dinámica del juego:</p>
+
+            <div class="concept-card">
+                <h3>1. Nivel de Amistad</h3>
+                <p>Define la "generosidad" del tablero. Si tienes muchas celdas ocupadas, el sistema te entregará piezas
+                    que encajan perfectamente con lo que ya tienes arriba o abajo de tus pilas.</p>
+                <p><span class="key-term">Tip:</span> Ponlo al 100% si quieres una experiencia relajada y estratégica.
+                </p>
+            </div>
+
+            <div class="concept-card">
+                <h3>2. Inteligencia IA</h3>
+                <p>Define qué tan astuto es el motor de juego al procesar tus movimientos. Una IA alta buscará priorizar
+                    eliminaciones que "revelen" fichas útiles escondidas en el fondo.</p>
+            </div>
+
+            <div class="concept-card">
+                <h3>3. Anticipación</h3>
+                <p>Define qué tan pronto el juego detecta tus necesidades. Con una anticipación alta, el sistema
+                    empezará a enviarte ayuda antes de que tus pilas lleguen a ser críticas.</p>
+            </div>
+        </section>
+
+        <section>
             <h2><i data-lucide="gamepad-2"></i> Controles</h2>
             <ul>
-                <li><b>Click izquierdo:</b> Seleccionar pila y colocar en tablero.</li>
-                <li><b>Flechas / WASD / Q-E:</b> Rotar la orientación de tus pilas de reserva.</li>
-                <li><b>Botón Mulligan ("Otra Tanda"):</b> Descarta tus fichas actuales y recibe nuevas. Úsalo
-                    sabiamente, ¡solo tienes 3 por partida!</li>
+                <li><b>Click izquierdo / Touch:</b> Seleccionar pila y colocar en tablero.</li>
+                <li><b>Flechas / WASD:</b> Rotar la orientación del tablero para una mejor visibilidad estratégica.</li>
+                <li><b>Botón Mulligan ("Otra Tanda"):</b> Descarta tus fichas actuales y recibe nuevas. ¡Úsalo cuando el
+                    tablero no te dé lo que buscas!</li>
             </ul>
         </section>
 

@@ -276,6 +276,21 @@ export function updateHeightLabel(value) {
     if (lbl) lbl.innerText = value;
 }
 
+export function updateFriendshipLabel(value) {
+    const lbl = document.getElementById('friendship-label');
+    if (lbl) lbl.innerText = value;
+}
+
+export function updateRevealLabel(value) {
+    const lbl = document.getElementById('reveal-label');
+    if (lbl) lbl.innerText = value;
+}
+
+export function updateAnalysisLabel(value) {
+    const lbl = document.getElementById('analysis-label');
+    if (lbl) lbl.innerText = value;
+}
+
 // Ranking Modal
 export function showRankingModal(forceDifficulty = null) {
     const modal = document.getElementById('ranking-modal');

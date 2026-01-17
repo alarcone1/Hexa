@@ -9,6 +9,7 @@
         window.onerror = function (msg, url, lineNo, columnNo, error) {
             const container = document.getElementById('message-overlay');
             if (container) {
+                container.classList.add('active');
                 container.style.opacity = 1;
                 container.style.fontSize = "12px";
                 container.style.textAlign = "left";
@@ -21,7 +22,7 @@
         };
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=4.1">
 </head>
 
 <body>
@@ -96,70 +97,75 @@
 
         <!-- MODAL DE AYUDA -->
         <div id="help-modal">
-            <div class="help-content">
+            <div class="help-content advanced-panel">
                 <h2>
-                    <i data-lucide="book-open"
-                        style="width: 1.2em; height: 1.2em; vertical-align: bottom; margin-right: 8px;"></i>
-                    Cómo Jugar HexaFlow
+                    <i data-lucide="book-open" class="config-icon-title"></i>
+                    GUÍA TÁCTICA
                 </h2>
 
-                <div class="help-section">
-                    <h3><i data-lucide="target" class="section-icon"></i> Objetivo</h3>
-                    <p>Completa el nivel alcanzando la meta de puntos con la <b>mayor eficiencia posible</b>.</p>
+                <div class="config-grid">
+                    <!-- Columna 1: Lo Básico -->
+                    <div class="config-column">
+                        <div class="config-card">
+                            <h3><i data-lucide="target"></i> Objetivo</h3>
+                            <p>Completa el nivel alcanzando la meta de puntos con la <b>mayor eficiencia posible</b>.
+                            </p>
+                            <p class="config-desc-small">El éxito se mide por la precisión, no por la velocidad pura.
+                            </p>
+                        </div>
+
+                        <div class="config-card">
+                            <h3><i data-lucide="zap"></i> Mecánica de Flujo</h3>
+                            <p>Al colocar una pila, las fichas saltan a vacíos vecinos del mismo color hacia la pila más
+                                alta.</p>
+                            <p class="config-desc-small">Domina el flujo para crear cascadas masivas de puntos.</p>
+                        </div>
+
+                        <div class="config-card">
+                            <h3><i data-lucide="gamepad-2"></i> Controles</h3>
+                            <ul class="clean-list">
+                                <li><b>Click:</b> Colocar pila seleccionada.</li>
+                                <li><b>Flechas / WASD:</b> Rotar tablero.</li>
+                                <li><b>Mulligan:</b> Recibir nuevas piezas.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Columna 2: Estrategia Avanzada -->
+                    <div class="help-column config-column">
+                        <div class="config-card">
+                            <h3><i data-lucide="award"></i> Ranking Maestro</h3>
+                            <p>La puntuación suprema se logra con:</p>
+                            <ol style="margin-top: 0; padding-left: 20px;">
+                                <li><b>Menos Pilas:</b> Bonus de precisión.</li>
+                                <li><b>Menor tiempo:</b> Bonus de velocidad.</li>
+                            </ol>
+                        </div>
+
+                        <div class="config-card">
+                            <h3><i data-lucide="brain-circuit"></i> Ayuda Táctica</h3>
+                            <p>Configura el <b>Nivel de Amistad</b> y la <b>Inteligencia IA</b> en el Centro de Control
+                                para recibir apoyo.</p>
+                            <p class="config-desc-small">Usa la IA a tu favor para desbloquear situaciones críticas.</p>
+                        </div>
+
+                        <div class="config-card">
+                            <h3><i data-lucide="maximize"></i> Tamaño y Desafío</h3>
+                            <p>Elige entre un tablero pequeño dinámico o uno grande estratégico.</p>
+                            <p class="config-desc-small">Cada radio cambia radicalmente el flujo de fichas.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="help-section">
-                    <h3><i data-lucide="award" class="section-icon"></i> Ranking</h3>
-                    <p>Tu posición dependerá de:</p>
-                    <ol>
-                        <li><b>Menor número de Pilas</b> (Prioridad 1)</li>
-                        <li><b>Menor tiempo</b> (Prioridad 2)</li>
-                    </ol>
-                </div>
-
-                <div class="help-section">
-                    <h3><i data-lucide="zap" class="section-icon"></i> Mecánica de Flujo</h3>
-                    <p>Al colocar una pila, las fichas saltan a vacios vecinos del mismo color. ¡Crea reacciones en
-                        cadena!</p>
-                </div>
-
-                <div class="help-section">
-                    <h3><i data-lucide="maximize" class="section-icon"></i> Tamaño del Tablero</h3>
-                    <p>Elige tu desafío en Configuración:</p>
-                    <ul class="clean-list">
-                        <li><b>Pequeño:</b> Rápido y letal (Radio 2).</li>
-                        <li><b>Normal:</b> Equilibrado (Radio 3).</li>
-                        <li><b>Grande:</b> Estrategia profunda (Radio 4).</li>
-                    </ul>
-                </div>
-
-                <div class="help-section">
-                    <h3><i data-lucide="lightbulb" class="section-icon"></i> Tip Estratégico</h3>
-                    <p>¿Tus fichas no se unen?</p>
-                    <p>Es posible que hayas alcanzado el <b>Límite de Altura</b>. Aumenta este límite en <i
-                            data-lucide="settings-2" style="width: 1em; vertical-align: middle;"></i>
-                        <b>Configuración</b> para permitir fusiones más grandes.
-                    </p>
-                </div>
-
-                <div class="help-section">
-                    <h3><i data-lucide="gamepad-2" class="section-icon"></i> Controles</h3>
-                    <ul class="clean-list">
-                        <li><b>Click:</b> Colocar pila</li>
-                        <li><b>Flechas:</b> Rotar tablero</li>
-                        <li><b>Mulligan:</b> Nuevas fichas</li>
-                    </ul>
-                </div>
-
-                <div class="modal-buttons">
+                <div class="modal-buttons config-actions">
                     <a href="manual.html" class="btn btn--primary"
                         style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
                         <i data-lucide="book-open-check"></i>
                         VER MANUAL COMPLETO
                     </a>
-                    <button id="close-help-btn" class="btn btn--gold-outline" onclick="toggleHelp()">
-                        <i data-lucide="house"></i>
-                        VOLVER
+                    <button id="close-help-btn" class="btn btn--gold" onclick="toggleHelp()">
+                        <i data-lucide="check"></i>
+                        APLICAR Y CERRAR
                     </button>
                 </div>
             </div>
@@ -168,7 +174,10 @@
         <!-- MODAL DE VICTORIA -->
         <div id="gameover-modal">
             <div class="gameover-content">
-                <h2 id="modal-title">🏆 ¡NIVEL COMPLETADO!</h2>
+                <h2 id="modal-title">
+                    <i data-lucide="party-popper" class="config-icon-title"></i>
+                    ¡NIVEL COMPLETADO!
+                </h2>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <span class="stat-value" id="final-moves">0</span>
@@ -217,8 +226,7 @@
         <div id="ranking-modal">
             <div class="ranking-content">
                 <h2>
-                    <i data-lucide="trophy"
-                        style="width: 1.2em; height: 1.2em; vertical-align: bottom; margin-right: 10px;"></i>
+                    <i data-lucide="trophy" class="config-icon-title"></i>
                     SALÓN DE LA FAMA
                 </h2>
 
@@ -256,55 +264,91 @@
 
         <!-- MODAL DE CONFIGURACIÓN -->
         <div id="config-modal">
-            <div class="config-content">
+            <div class="config-content advanced-panel">
                 <h2>
-                    <i data-lucide="settings" class="config-icon-title"></i>
-                    CONFIGURACIÓN
+                    <i data-lucide="settings-2" class="config-icon-title"></i>
+                    CENTRO DE CONTROL
                 </h2>
 
-                <div class="config-card">
-                    <h3>Tamaño de Tablero</h3>
+                <div class="config-grid">
+                    <!-- Columna 1: Dificultad Base -->
+                    <div class="config-column">
+                        <div class="config-card">
+                            <h3><i data-lucide="layout-grid"></i> Tamaño de Tablero</h3>
+                            <div class="difficulty-segmented-control">
+                                <button class="segment-btn" data-difficulty="2"
+                                    onclick="setDifficulty(2)">Pequeño</button>
+                                <button class="segment-btn active" data-difficulty="3"
+                                    onclick="setDifficulty(3)">Normal</button>
+                                <button class="segment-btn" data-difficulty="4"
+                                    onclick="setDifficulty(4)">Grande</button>
+                            </div>
+                            <div id="difficulty-description" class="config-desc-small">Radio 3 • 37 celdas</div>
+                        </div>
 
-                    <div class="difficulty-segmented-control">
-                        <button class="segment-btn" data-difficulty="2" onclick="setDifficulty(2)">Pequeño</button>
-                        <button class="segment-btn active" data-difficulty="3"
-                            onclick="setDifficulty(3)">Normal</button>
-                        <button class="segment-btn" data-difficulty="4" onclick="setDifficulty(4)">Grande</button>
-                    </div>
-                    <div id="difficulty-description" class="config-desc-small">Radio 3 • 37 celdas</div>
-                </div>
+                        <div class="config-card">
+                            <h3><i data-lucide="target"></i> Meta de Puntos</h3>
+                            <div class="height-slider-container">
+                                <input type="range" id="goal-range" min="50" max="1000" step="50" value="100"
+                                    onchange="setGoal(this.value)" oninput="updateGoalLabel(this.value)">
+                                <div class="slider-value"><span id="goal-label">100</span></div>
+                            </div>
+                            <p class="config-desc-small">Puntos necesarios para completar el nivel actual.</p>
+                        </div>
 
-                <div class="config-card">
-                    <h3>Meta de Puntos</h3>
-                    <div class="height-slider-container">
-                        <input type="range" id="goal-range" min="50" max="500" step="10" value="100"
-                            onchange="setGoal(this.value)" oninput="updateGoalLabel(this.value)">
-                        <div class="slider-value"><span id="goal-label">100</span></div>
+                        <div class="config-card">
+                            <h3><i data-lucide="bar-chart-3"></i> Límite de Altura</h3>
+                            <div class="height-slider-container">
+                                <input type="range" id="height-range" min="5" max="30" value="15"
+                                    onchange="setMaxHeight(this.value)" oninput="updateHeightLabel(this.value)">
+                                <div class="slider-value"><span id="height-label">15</span></div>
+                            </div>
+                            <p class="config-desc-small">Fichas máximas permitidas antes de bloquear la celda.</p>
+                        </div>
                     </div>
-                    <p class="config-desc-small">Puntos para completar el nivel</p>
-                </div>
 
-                <div class="config-card">
-                    <h3>Límite de Altura</h3>
-                    <div class="height-slider-container">
-                        <input type="range" id="height-range" min="10" max="30" value="15"
-                            onchange="setMaxHeight(this.value)" oninput="updateHeightLabel(this.value)">
-                        <div class="slider-value"><span id="height-label">15</span> fichas</div>
+                    <!-- Columna 2: Amistad e Inteligencia -->
+                    <div class="config-column">
+                        <div class="config-card">
+                            <h3><i data-lucide="heart-handshake"></i> Nivel de Amistad</h3>
+                            <div class="height-slider-container">
+                                <input type="range" id="friendship-range" min="0" max="100" value="40"
+                                    onchange="setFriendship(this.value)" oninput="updateFriendshipLabel(this.value)">
+                                <div class="slider-value"><span id="friendship-label">40</span>%</div>
+                            </div>
+                            <p class="config-desc-small">Umbral de ocupación para recibir ayuda táctica</p>
+                        </div>
+
+                        <div class="config-card">
+                            <h3><i data-lucide="brain-circuit"></i> Inteligencia IA</h3>
+                            <div class="height-slider-container">
+                                <input type="range" id="reveal-range" min="0" max="300" step="10" value="150"
+                                    onchange="setRevealBonus(this.value)" oninput="updateRevealLabel(this.value)">
+                                <div class="slider-value"><span id="reveal-label">150</span></div>
+                            </div>
+                            <p class="config-desc-small">Incentivo de la IA para revelarte nuevas jugadas</p>
+                        </div>
+
+                        <div class="config-card">
+                            <h3><i data-lucide="eye"></i> Anticipación</h3>
+                            <div class="height-slider-container">
+                                <input type="range" id="analysis-range" min="1" max="15" value="5"
+                                    onchange="setAnalysisHeight(this.value)" oninput="updateAnalysisLabel(this.value)">
+                                <div class="slider-value"><span id="analysis-label">5</span></div>
+                            </div>
+                            <p class="config-desc-small">Altura mínima para predecir tus necesidades</p>
+                        </div>
                     </div>
-                    <p class="config-desc-small">Máximo de fichas por celda</p>
                 </div>
 
                 <div class="config-actions">
-                    <button id="cancel-config-btn" class="btn btn--gold-outline" onclick="toggleConfig()">
-                        <i data-lucide="house"></i>
-                        VOLVER
+                    <button id="cancel-config-btn" class="btn btn--gold" onclick="toggleConfig()">
+                        <i data-lucide="check"></i>
+                        APLICAR CAMBIOS
                     </button>
-                </div>
-
-                <div class="danger-zone-link">
-                    <button id="reset-data-btn" class="btn btn--danger" onclick="resetRankingsConfirm()">
+                    <button id="reset-data-btn" class="btn btn--danger-outline" onclick="resetRankingsConfirm()">
                         <i data-lucide="trash-2"></i>
-                        Resetear Rankings Data
+                        RESET DATA
                     </button>
                 </div>
             </div>

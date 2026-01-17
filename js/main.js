@@ -13,6 +13,9 @@ import {
     addActiveColor,
     updateGoalLabel,
     updateHeightLabel,
+    updateFriendshipLabel,
+    updateRevealLabel,
+    updateAnalysisLabel,
     saveScore,
     filterRankingByDifficulty
 } from './ui.js?v=3.0';
@@ -60,6 +63,16 @@ function resetGame() {
     state.particles = [];
     state.effects = [];
     state.animatedChips = [];
+
+    // Limpieza de estilos residuales si los hay
+    const overlay = document.getElementById('message-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        overlay.style.opacity = 0;
+        overlay.innerText = '';
+    }
+
+    resize(); // Recalcular escala segun dificultad
 
     updateStat('score', 0);
     updateStat('goal', state.goal);
@@ -143,6 +156,18 @@ function setMaxHeight(value) {
     state.maxStackHeight = parseInt(value);
 }
 
+function setFriendship(value) {
+    state.friendshipThreshold = parseInt(value) / 100;
+}
+
+function setRevealBonus(value) {
+    state.revealBonus = parseInt(value);
+}
+
+function setAnalysisHeight(value) {
+    state.analysisHeight = parseInt(value);
+}
+
 function showRankingFromConfig() {
     toggleConfig();
     showRankingModal();
@@ -169,10 +194,16 @@ window.mulligan = mulligan;
 window.toggleConfig = toggleConfig;
 window.toggleHelp = toggleHelp;
 window.setDifficulty = setDifficulty;
-window.setGoal = setGoal; // Added missing export
+window.setGoal = setGoal;
 window.setMaxHeight = setMaxHeight;
+window.setFriendship = setFriendship;
+window.setRevealBonus = setRevealBonus;
+window.setAnalysisHeight = setAnalysisHeight;
 window.updateGoalLabel = updateGoalLabel;
 window.updateHeightLabel = updateHeightLabel;
+window.updateFriendshipLabel = updateFriendshipLabel;
+window.updateRevealLabel = updateRevealLabel;
+window.updateAnalysisLabel = updateAnalysisLabel;
 window.showRankingFromConfig = showRankingFromConfig;
 window.showRankingFromModal = showRankingFromModal;
 window.closeRanking = closeRanking;
@@ -188,6 +219,21 @@ function resize() {
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
+
+    // Calcular escala dinámica basada en el tablero
+    // El tablero tiene radio 'state.difficulty'. 
+    // Ancho total en hexes approx: (2 * radius + 1) * HEX_SIZE * 1.5
+    const boardRadius = state.difficulty || 3;
+    const boardWidthPx = (2 * boardRadius + 1) * 40 * 1.8; // 40 es HEX_SIZE, 1.8 factor de seguridad
+    const boardHeightPx = (2 * boardRadius + 1) * 40 * 1.8;
+
+    const scaleX = rect.width / boardWidthPx;
+    const scaleY = rect.height / boardHeightPx;
+
+    // Usar la menor escala para asegurar que quepa todo, limitado a un rango razonable
+    state.scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.5), 1.5);
+
+    console.log(`Resize: Scale set to ${state.scale.toFixed(2)} for difficulty ${boardRadius}`);
 }
 window.addEventListener('resize', resize);
 
@@ -210,6 +256,10 @@ canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     let mouseX = (e.clientX - rect.left) - rect.width / 2;
     let mouseY = (e.clientY - rect.top) - rect.height / 2;
+    // Aplicar escala inversa al mouse
+    mouseX /= state.scale;
+    mouseY /= state.scale;
+
     const rad = -state.rotation * Math.PI / 180;
     const rx = mouseX * Math.cos(rad) - mouseY * Math.sin(rad);
     const ry = mouseX * Math.sin(rad) + mouseY * Math.cos(rad);
@@ -238,6 +288,10 @@ canvas.addEventListener('mousedown', async (e) => {
         const rect = canvas.getBoundingClientRect();
         let mouseX = (e.clientX - rect.left) - rect.width / 2;
         let mouseY = (e.clientY - rect.top) - rect.height / 2;
+        // Aplicar escala inversa al mouse
+        mouseX /= state.scale;
+        mouseY /= state.scale;
+
         const rad = -state.rotation * Math.PI / 180;
         const rx = mouseX * Math.cos(rad) - mouseY * Math.sin(rad);
         const ry = mouseX * Math.sin(rad) + mouseY * Math.cos(rad);
@@ -277,7 +331,22 @@ function render() {
     if (state.keysPressed.ArrowLeft) state.rotation -= 2;
     if (state.keysPressed.ArrowRight) state.rotation += 2;
 
+    // Resetear matriz de transformación para limpiar TODO el canvas
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Restaurar el escalado por DPR para dibujo de alta resolución
+    const dpr = window.devicePixelRatio || 1;
+    ctx.scale(dpr, dpr);
+
+    // Limpieza agresiva de sombras y estados previos
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowColor = 'rgba(0,0,0,0)';
+    ctx.globalAlpha = 1.0;
+    ctx.filter = 'none';
+
     const rect = canvas.getBoundingClientRect();
 
     // 1. Board Backgrounds
@@ -290,6 +359,7 @@ function render() {
 
     ctx.save();
     ctx.translate(rect.width / 2, rect.height / 2);
+    ctx.scale(state.scale, state.scale);
     ctx.rotate(state.rotation * Math.PI / 180);
     // Now (0,0) is center and rotated.
     // But wait, `drawHexBackground` logic:

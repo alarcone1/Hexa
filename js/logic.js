@@ -109,9 +109,9 @@ export function generatePile() {
     let emptyCells = 0;
     state.board.forEach(cell => { if (cell.chips.length === 0) emptyCells++; });
 
-    // Umbral de "Amistad": menos del 20% del tablero vacío o si se pide explícitamente (mulligan)
+    // Umbral de "Amistad" dinámico definido por el usuario
     const boardSize = state.board.size;
-    if (emptyCells < boardSize * 0.2) {
+    if (emptyCells < boardSize * state.friendshipThreshold) {
         return generateFriendshipPile();
     }
 
@@ -157,7 +157,7 @@ function analyzeBoardFriendly() {
     const underColors = [];
 
     state.board.forEach((cell) => {
-        if (cell.chips.length >= 7 && !cell.isObstacle) {
+        if (cell.chips.length >= state.analysisHeight && !cell.isObstacle) {
             const topColor = cell.chips[cell.chips.length - 1];
             topColors.push(topColor);
 
@@ -317,7 +317,7 @@ export async function processMove(startQ, startR) {
                     if (revealedColor) {
                         const matches = countNeighborMatches(source.q, source.r, revealedColor);
                         if (matches > 0) {
-                            score += (50 * matches); // Bonus for revealing connectable colors
+                            score += (state.revealBonus * matches); // Bonus dinámico
                         }
                     }
                 }
