@@ -1,6 +1,6 @@
-import { state, hexRadius } from './state.js?v=3.0';
-import { COLORS } from './constants.js?v=3.0';
-import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=3.0';
+import { state, hexRadius, loadProgress } from './state.js?v=3.1';
+import { COLORS } from './constants.js?v=3.1';
+import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=3.1';
 import {
     updateStat,
     updatePileUI,
@@ -17,14 +17,16 @@ import {
     updateRevealLabel,
     updateAnalysisLabel,
     saveScore,
-    filterRankingByDifficulty
-} from './ui.js?v=3.0';
+    filterRankingByDifficulty,
+    showLevelFlashcard,
+    handleCellHover
+} from './ui.js?v=3.1';
 import {
     drawHexBackground,
     drawHexChips,
     drawFlowArrow
-} from './graphics.js?v=3.0';
-import { pixelToAxial } from './utils.js?v=3.0';
+} from './graphics.js?v=3.1';
+import { pixelToAxial } from './utils.js?v=3.1';
 
 const canvas = document.getElementById('gameCanvas');
 if (!canvas) console.error("Canvas element not found!");
@@ -87,6 +89,16 @@ function resetGame() {
     initBoard();
     refillPlayerPiles(); // This updates Pile UI
     renderActiveColors();
+
+    // ASCENSIÓN: Mostrar Flashcard al inicio del Nivel (Partida 1)
+    if (state.subLevel === 1) {
+        import('./constants.js?v=3.1').then(m => {
+            const types = ['ROCK', 'GRIETA', 'IMAN', 'VENTILADOR', 'CRISTAL', 'VALVULA', 'AGUJERO', 'PEAJE', 'NIEBLA', 'NUCLEO'];
+            const obstacleType = types[Math.min(state.level - 2, types.length - 1)];
+            const info = m.OBSTACLE_TYPES[obstacleType] || null;
+            showLevelFlashcard(state.level, info);
+        });
+    }
 }
 
 function startGame() {
@@ -179,9 +191,11 @@ function showRankingFromModal() {
 }
 
 function resetRankingsConfirm() {
-    if (confirm('¿Seguro que quieres borrar todos los rankings?')) {
+    if (confirm('¿Seguro que quieres borrar todos los datos de juego y progreso de campaña?')) {
         localStorage.removeItem('hexaflow_scores_v4');
-        alert('Rankings borrados.');
+        localStorage.removeItem('hexaflow_progression_v1');
+        alert('Datos borrados. El juego se reiniciará.');
+        location.reload();
     }
 }
 
@@ -222,16 +236,16 @@ function resize() {
 
     // Calcular escala dinámica basada en el tablero
     // El tablero tiene radio 'state.difficulty'. 
-    // Ancho total en hexes approx: (2 * radius + 1) * HEX_SIZE * 1.5
+    // Ancho total en hexes approx: (2 * radius + 1) * HEX_SIZE * 2.2
     const boardRadius = state.difficulty || 3;
-    const boardWidthPx = (2 * boardRadius + 1) * 40 * 1.8; // 40 es HEX_SIZE, 1.8 factor de seguridad
-    const boardHeightPx = (2 * boardRadius + 1) * 40 * 1.8;
+    const boardWidthPx = (2 * boardRadius + 1) * 40 * 2.2; // Aumentado factor de seguridad de 1.8 a 2.2
+    const boardHeightPx = (2 * boardRadius + 1) * 40 * 2.2;
 
     const scaleX = rect.width / boardWidthPx;
     const scaleY = rect.height / boardHeightPx;
 
     // Usar la menor escala para asegurar que quepa todo, limitado a un rango razonable
-    state.scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.5), 1.5);
+    state.scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.4), 1.2);
 
     console.log(`Resize: Scale set to ${state.scale.toFixed(2)} for difficulty ${boardRadius}`);
 }
@@ -268,8 +282,11 @@ canvas.addEventListener('mousemove', (e) => {
 
     if (state.board.has(key)) {
         state.hoveredCell = { q, r };
+        const cell = state.board.get(key);
+        handleCellHover(cell);
     } else {
         state.hoveredCell = null;
+        handleCellHover(null);
     }
 });
 
@@ -303,7 +320,7 @@ canvas.addEventListener('mousedown', async (e) => {
     const key = `${q},${r}`;
     if (state.board.has(key)) {
         const cell = state.board.get(key);
-        if (cell.chips.length === 0) {
+        if (cell.chips.length === 0 && !cell.isObstacle) {
             cell.chips = [...state.playerPiles[state.selectedPileIndex]];
             state.playerPiles[state.selectedPileIndex] = null;
             state.selectedPileIndex = null;
@@ -486,6 +503,7 @@ function render() {
 
 // Start
 resize();
+loadProgress(); // Cargar nivel guardado antes de inicializar tablero
 initBoard();
 resetGame();
 requestAnimationFrame(render);

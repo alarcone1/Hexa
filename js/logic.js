@@ -1,13 +1,22 @@
-import { state, hexRadius, setHexRadius } from './state.js?v=3.0';
-import { COLORS } from './constants.js?v=3.0';
-import { getNeighbors } from './utils.js?v=3.0';
-import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=3.0';
-import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver } from './ui.js?v=3.0';
+import { state, hexRadius, setHexRadius } from './state.js?v=3.1';
+import { COLORS } from './constants.js?v=3.1';
+import { getNeighbors } from './utils.js?v=3.1';
+import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=3.1';
+import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver } from './ui.js?v=3.1';
 
 // --- INITIALIZATION ---
 export function initBoard() {
     state.board.clear();
-    const radius = state.difficulty;
+
+    // Determinar Radio según Sub-nivel (Funnel de Dificultad)
+    // Para Niveles iniciales (1-2), empezamos en Radio 3 para evitar desbordamiento visual
+    let radius = (state.level <= 2) ? 3 : 4;
+
+    if (state.subLevel >= 6 && state.subLevel <= 8) radius = 3;
+    else if (state.subLevel >= 9) radius = 2;
+
+    state.difficulty = radius; // Sincronizar estado
+
     for (let q = -radius; q <= radius; q++) {
         let r1 = Math.max(-radius, -q - radius);
         let r2 = Math.min(radius, -q + radius);
@@ -22,61 +31,66 @@ export function initBoard() {
 
     // Update Level Indicator
     const levelInd = document.getElementById('level-indicator');
-    if (levelInd) levelInd.innerText = `NIVEL ${state.level}`;
+    if (levelInd) levelInd.innerText = `NIVEL ${state.level} - ${state.subLevel}/10`;
 }
 
 function applyLevelLayout(level) {
-    const scenario = (level - 1) % 4; // Cycle 0-3
-    const centerQ = 0, centerR = 0;
+    if (level === 1) return; // Nivel 1 es básico
 
-    // Nivel 1: Archipiélago (Introducción)
-    if (scenario === 0) {
-        // 3 Rocas en bordes (approx coordinates dependent on radius, hardcoding for r=3 general feel)
-        addObstacle(state.difficulty, 0);
-        addObstacle(-state.difficulty, 0);
+    // 1. Agregar el obstáculo específico del nivel
+    const obstacleType = getObstacleTypeByLevel(level);
 
-        // 3 Pilas bajas en centro
-        addRandomPile(0, 0, 3);
-        addRandomPile(1, -1, 3);
-        addRandomPile(-1, 1, 3);
+    // Cantidad más conservadora en niveles bajos para evitar desborde
+    let count = 1;
+    if (level > 4) count = 2 + Math.floor(level / 3);
+    else if (level > 2) count = 2;
+
+    for (let i = 0; i < count; i++) {
+        addRandomObstacleOfType(obstacleType);
     }
 
-    // Nivel 2: El Muro
-    else if (scenario === 1) {
-        // Muro vertical
-        for (let i = -1; i <= 2; i++) {
-            addObstacle(0, i);
-        }
-        addRandomPile(1, 0, 5);
-        addRandomPile(-1, 0, 5);
+    // 2. Agregar una pizca de caos de niveles anteriores (Dificultad acumulativa)
+    if (level > 2) {
+        const prevLevel = 1 + Math.floor(Math.random() * (level - 2));
+        const prevType = getObstacleTypeByLevel(prevLevel);
+        addRandomObstacleOfType(prevType);
     }
+}
 
-    // Nivel 3: El Bunker
-    else if (scenario === 2) {
-        // Centro protegido
-        const neighbors = getNeighbors(0, 0);
-        neighbors.forEach(n => addObstacle(n.q, n.r));
-        addRandomPile(0, 0, 8); // Pila alta atrapada? No, el bunker es el anillo.
-    }
+function getObstacleTypeByLevel(level) {
+    const types = ['ROCK', 'GRIETA', 'IMAN', 'VENTILADOR', 'CRISTAL', 'VALVULA', 'AGUJERO', 'PEAJE', 'NIEBLA', 'NUCLEO'];
+    // Ajuste de índice: Level 2 -> types[0], Level 3 -> types[1]...
+    return types[Math.min(level - 2, types.length - 1)] || 'ROCK';
+}
 
-    // Nivel 4: Campo Minado
-    else if (scenario === 3) {
-        const rocks = 4 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < rocks; i++) addRandomObstacle();
+function addRandomObstacleOfType(type) {
+    const keys = Array.from(state.board.keys()).filter(k => {
+        const cell = state.board.get(k);
+        return cell.chips.length === 0; // Solo en celdas vacías
+    });
+    if (keys.length === 0) return;
 
-        const piles = 5;
-        for (let i = 0; i < piles; i++) addRandomPile(null, null, 10 + Math.floor(Math.random() * 4));
-    }
+    const rndKey = keys[Math.floor(Math.random() * keys.length)];
+    const [q, r] = rndKey.split(',').map(Number);
+
+    state.board.set(rndKey, {
+        chips: [type],
+        type: type, // Guardamos el tipo explícitamente para la lógica posterior
+        isObstacle: true,
+        spawnTime: performance.now()
+    });
 }
 
 function addObstacle(q, r) {
     const key = `${q},${r}`;
     if (state.board.has(key)) {
         // Obstacle is represented by a special "ROCK" chip or state.
-        // For now, let's use a specific visually distinct hack if we don't have rock assets.
-        // Or better, just mark it. Assuming 'ROCK' is not in COLORS.
-        // We will need to update Graphics to render this.
-        state.board.set(key, { chips: ['ROCK'], isObstacle: true });
+        // We add spawnTime for emergence animation
+        state.board.set(key, {
+            chips: ['ROCK'],
+            isObstacle: true,
+            spawnTime: performance.now()
+        });
     }
 }
 
@@ -241,7 +255,7 @@ export async function processMove(startQ, startR) {
             const [q, r] = currentKey.split(',').map(Number);
             const cell = state.board.get(currentKey);
 
-            if (!cell || cell.chips.length === 0) continue;
+            if (!cell || cell.chips.length === 0 || cell.isObstacle) continue;
 
             const topColor = cell.chips[cell.chips.length - 1];
             const mySize = countConsecutive(cell.chips, topColor);
@@ -421,9 +435,14 @@ async function gatherNeighborsToCenter(centerQ, centerR, neighbors, color, durat
             chipsToMove.push(n.cell.chips.pop());
         }
         if (chipsToMove.length > 0) {
+            const dynamicHeight = 40 + chipsToMove.length * 10;
             for (let i = 0; i < chipsToMove.length; i++) {
-                const anim = new AnimatedChip(n.q, n.r, centerQ, centerR, chipsToMove[i], duration);
-                anim.startTime = performance.now() + (i * 20);
+                // La ficha i de chipsToMove saldría de la posición (n.cell.chips.length + i)
+                // Y llegaría a (centerCell.chips.length + (chipsToMove.length - 1 - i))
+                const startIdx = n.cell.chips.length + (chipsToMove.length - 1 - i);
+                const endIdx = centerCell.chips.length + i;
+                const anim = new AnimatedChip(n.q, n.r, centerQ, centerR, chipsToMove[i], duration, dynamicHeight, startIdx, endIdx);
+                anim.startTime = performance.now() + (i * 45); // Efecto acordeón moderado
                 state.animatedChips.push(anim);
             }
             totalMovedChips.push(chipsToMove);
@@ -432,7 +451,9 @@ async function gatherNeighborsToCenter(centerQ, centerR, neighbors, color, durat
 
     if (totalMovedChips.length === 0) return;
 
-    await new Promise(r => setTimeout(r, duration + 200));
+    // Calcular la espera máxima según la pila más grande movida
+    const maxChips = Math.max(...totalMovedChips.map(b => b.length));
+    await new Promise(r => setTimeout(r, duration + (maxChips * 45) + 400));
 
     for (const batch of totalMovedChips) {
         for (let i = batch.length - 1; i >= 0; i--) {
@@ -450,15 +471,22 @@ async function distributeCenterToTarget(centerQ, centerR, target, color, duratio
         chipsToMove.push(centerCell.chips.pop());
     }
 
-    if (chipsToMove.length === 0) return;
-
+    const dynamicHeight = 40 + chipsToMove.length * 10;
     for (let i = 0; i < chipsToMove.length; i++) {
-        const anim = new AnimatedChip(centerQ, centerR, target.q, target.r, chipsToMove[i], duration);
-        anim.startTime = performance.now() + (i * 30);
+        // Sale del centro (centerCell.chips.length + i)
+        // Llega al destino (targetCell.chips.length + (chipsToMove.length - 1 - i))
+        const targetCell = state.board.get(target.key || `${target.q},${target.r}`);
+        const targetHeight = targetCell ? targetCell.chips.length : 0;
+
+        const startIdx = centerCell.chips.length + (chipsToMove.length - 1 - i);
+        const endIdx = targetHeight + i;
+
+        const anim = new AnimatedChip(centerQ, centerR, target.q, target.r, chipsToMove[i], duration, dynamicHeight, startIdx, endIdx);
+        anim.startTime = performance.now() + (i * 45);
         state.animatedChips.push(anim);
     }
 
-    await new Promise(r => setTimeout(r, duration + (chipsToMove.length * 30)));
+    await new Promise(r => setTimeout(r, duration + (chipsToMove.length * 45) + 400));
 
     const targetCell = state.board.get(target.key || `${target.q},${target.r}`);
     if (targetCell) {
@@ -490,7 +518,7 @@ export async function checkEliminationAt(q, r, isCenter = false) {
 
 function findPendingEliminationCell() {
     for (const [key, cell] of state.board.entries()) {
-        if (!cell || cell.chips.length < 10) continue;
+        if (!cell || cell.chips.length < 10 || cell.isObstacle) continue;
 
         const topColor = cell.chips[cell.chips.length - 1];
         const { count } = countTopColorChips(cell, topColor);
@@ -505,7 +533,7 @@ function findFragmentedConnection() {
     // Scans board for any cell that has a neighbor of the same color
     // but wasn't processed (stuck isolation).
     for (const [key, cell] of state.board.entries()) {
-        if (!cell || cell.chips.length === 0) continue;
+        if (!cell || cell.chips.length === 0 || cell.isObstacle) continue;
         const topColor = cell.chips[cell.chips.length - 1];
         const [q, r] = key.split(',').map(Number);
         const neighbors = getNeighbors(q, r);
@@ -585,6 +613,7 @@ export function findFlowTarget(q, r, topColor, boardState) {
         const nKey = `${n.q},${n.r}`;
         if (boardState.has(nKey)) {
             const nCell = boardState.get(nKey);
+            if (nCell.isObstacle) continue;
             if (nCell.chips.length > 0 && nCell.chips[nCell.chips.length - 1] === topColor) {
                 const sameColorCount = nCell.chips.filter(c => c === topColor).length;
 

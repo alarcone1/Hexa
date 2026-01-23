@@ -4,9 +4,12 @@ export const state = {
     mulligans: 3,
     numColors: 3,
     difficulty: 2,
-    level: 1, // Nuevo: Nivel actual de Ascensión
+    level: 1,           // Nivel actual de Ascensión (1-12)
+    subLevel: 1,        // Sub-nivel actual (1-10)
+    isConfigLocked: false, // Bloquea configuración tras la partida 1 de cada nivel
     maxStackHeight: 15,
     moves: 0,
+    maxMoves: 50,       // Límite de movimientos por partida (ajustable)
     startTime: null,
     board: new Map(), // key: "q,r", value: { chips: [] }
     playerPiles: [null, null, null],
@@ -38,4 +41,34 @@ export let hexRadius = 2;
 
 export function setHexRadius(val) {
     hexRadius = val;
+}
+
+const STORAGE_KEY_PROG = 'hexaflow_progression_v1';
+
+export function saveProgress() {
+    const data = {
+        level: state.level,
+        subLevel: state.subLevel,
+        isConfigLocked: state.isConfigLocked
+    };
+    console.log("GUARDANDO PROGRESO ->", data);
+    localStorage.setItem(STORAGE_KEY_PROG, JSON.stringify(data));
+}
+
+export function loadProgress() {
+    const saved = localStorage.getItem(STORAGE_KEY_PROG);
+    console.log("CARGANDO PROGRESO... Encontrado:", saved);
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            state.level = data.level || 1;
+            state.subLevel = data.subLevel || 1;
+            state.isConfigLocked = data.isConfigLocked || false;
+            console.log("PROGRESO RESTAURADO:", state.level, state.subLevel);
+        } catch (e) {
+            console.error("Error cargando progreso:", e);
+        }
+    } else {
+        console.log("No se encontró progreso previo, iniciando en Nivel 1.");
+    }
 }

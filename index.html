@@ -37,7 +37,7 @@
 
         <div id="hud">
             <!-- Nivel Actual (Ascensión) -->
-            <div id="level-indicator">NIVEL 1</div>
+            <div id="level-indicator">NIVEL 1 - 1/10</div>
 
             <!-- Botones de Sistema (Arriba Izquierda) -->
             <div class="hud-buttons">
@@ -93,6 +93,33 @@
                 <span class="btn-icon"><i data-lucide="shuffle"></i></span> Otra Tanda (<span
                     id="mulligan-count">3</span>)
             </button>
+        </div>
+
+        <!-- Intelligence Bar (Status Bar) -->
+        <div id="intelligence-bar">
+            <div id="intel-content">
+                <i data-lucide="info" class="intel-icon"></i>
+                <span id="intel-text">Prepárate para la Ascensión...</span>
+            </div>
+        </div>
+
+        <!-- FLASHCARD DE NIVEL (Overlay) -->
+        <div id="level-flashcard" class="flashcard-overlay">
+            <div class="flashcard-content advanced-panel">
+                <div class="flashcard-header">
+                    <i data-lucide="sparkles" class="flash-icon-main"></i>
+                    <h1 id="flash-level-title">NIVEL 1</h1>
+                </div>
+                <div class="flashcard-body">
+                    <div id="flash-obstacle-preview" class="obstacle-preview"></div>
+                    <h3 id="flash-obstacle-name">EL COMIENZO</h3>
+                    <p id="flash-obstacle-desc">Domina el flujo básico antes de enfrentar los desafíos de la Ascensión.
+                    </p>
+                </div>
+                <button class="btn btn--gold" onclick="closeFlashcard()">
+                    <i data-lucide="play"></i> COMIENZO DE TRANSMISIÓN
+                </button>
+            </div>
         </div>
 
         <!-- MODAL DE AYUDA -->
@@ -355,7 +382,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=3.0"></script>
+    <script type="module" src="js/main.js?v=3.1"></script>
     <script>
         lucide.createIcons();
     </script>

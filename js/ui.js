@@ -1,7 +1,7 @@
-import { state } from './state.js?v=3.0';
-import { COLORS } from './constants.js?v=3.0';
-import { formatTime } from './utils.js?v=3.0';
-import { spawnConfetti } from './graphics.js?v=3.0';
+import { state, saveProgress } from './state.js?v=3.1';
+import { COLORS } from './constants.js?v=3.1';
+import { formatTime } from './utils.js?v=3.1';
+import { spawnConfetti } from './graphics.js?v=3.1';
 
 // Elementos del DOM
 const scoreEl = document.getElementById('score');
@@ -146,8 +146,20 @@ export function gameWin() {
 
     try {
         saveScore(true);
-        state.level++;
+
+        // Progresión de Sub-niveles
+        state.subLevel++;
+        if (state.subLevel > 10) {
+            state.level++;
+            state.subLevel = 1;
+            state.isConfigLocked = false; // Desbloquear configuración para el nuevo nivel
+        } else {
+            // Si ya pasamos la partida 1, la configuración sigue bloqueada
+            if (state.subLevel > 1) state.isConfigLocked = true;
+        }
+
         spawnConfetti();
+        saveProgress(); // Guardar progreso tras ganar partida
     } catch (e) {
         console.error("Error in gameWin (stats/confetti):", e);
     }
@@ -237,8 +249,21 @@ export function saveScore(isWin) {
 
 // --- CONFIG MODAL helpers ---
 export function toggleConfig() {
-    state.isConfigOpen = !state.isConfigOpen;
-    configModal.classList.toggle('active', state.isConfigOpen);
+    if (state.isConfigOpen) {
+        state.isConfigOpen = false;
+        configModal.classList.remove('active');
+        return;
+    }
+
+    state.isConfigOpen = true;
+    configModal.classList.add('active');
+
+    // Aplicar bloqueo visual si es necesario
+    const grid = configModal.querySelector('.config-grid');
+    if (grid) {
+        grid.classList.toggle('config-locked', state.isConfigLocked);
+    }
+
     updateDifficultyButtons();
 }
 
@@ -354,3 +379,53 @@ export function filterRankingByDifficulty(level) {
 export function closeRanking() {
     document.getElementById('ranking-modal').classList.remove('active');
 }
+
+// --- ASCENCIÓN UI EXTRAS ---
+
+export function showLevelFlashcard(level, obstacle) {
+    const flashcard = document.getElementById('level-flashcard');
+    const title = document.getElementById('flash-level-title');
+    const obsName = document.getElementById('flash-obstacle-name');
+    const obsDesc = document.getElementById('flash-obstacle-desc');
+
+    title.innerText = `NIVEL ${level}`;
+    if (obstacle) {
+        obsName.innerText = obstacle.name;
+        obsDesc.innerText = obstacle.desc;
+    } else {
+        obsName.innerText = "PRÓXIMO DESAFÍO";
+        obsDesc.innerText = "Nuevas mecánicas te esperan en la Ascensión.";
+    }
+
+    flashcard.style.display = 'flex';
+}
+
+window.closeFlashcard = function () {
+    const flashcard = document.getElementById('level-flashcard');
+    flashcard.style.opacity = '0';
+    setTimeout(() => {
+        flashcard.style.display = 'none';
+        flashcard.style.opacity = '1';
+    }, 500);
+};
+
+export function updateIntelBar(text) {
+    const intelText = document.getElementById('intel-text');
+    if (intelText) {
+        intelText.innerText = text;
+    }
+}
+
+// Event listeners para hover en obstáculos (se llamará desde el render o mousemove)
+export function handleCellHover(cell) {
+    if (cell && cell.isObstacle) {
+        const type = cell.type || 'ROCK';
+        const info = OBSTACLE_TYPES[type] || { name: 'OBJETO EXTRAÑO', desc: 'Funcionalidad desconocida.' };
+        updateIntelBar(`${info.name}: ${info.desc}`);
+    } else {
+        updateIntelBar("Explora el tablero para descubrir secretos...");
+    }
+}
+
+import { OBSTACLE_TYPES } from './constants.js?v=3.1';
+

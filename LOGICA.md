@@ -67,16 +67,19 @@ El sistema evalúa cada posible destino de fusión (la celda actual y sus vecino
 ### Failsafe (Recuperación)
 Si la cola se vacía pero el tablero quedó en un estado "roto" (fichas conectadas que no se unieron), el sistema ejecuta `findFragmentedConnection()` para reactivar esas celdas y asegurar que siempre se completen todas las fusiones posibles.
 
-## Sistema de Dificultad Dinámica
+## Modo Campaña: Ascensión (12 Niveles)
 
-El juego implementa "Presets de Balanceo" (`DIFFICULTY_PRESETS`) que ajustan las variables del entorno según el tamaño del tablero escogido, aunque el jugador puede refinar estos valores manualmente:
+El juego se organiza en una campaña de 12 niveles finitos. Cada nivel consta de 10 sub-niveles (partidas).
 
-| Dificultad | Radio (Tablero) | Meta de Puntos | Límite de Altura | Descripción |
-| :--- | :---: | :---: | :---: | :--- |
-| **Fácil** | 2 (19 celdas) | 100 | 25 | Tablero pequeño, pilas muy altas permitidas. Ideal para aprender. |
-| **Normal** | 3 (37 celdas) | 200 | 20 | Balance estándar. Requiere gestión de espacio. |
-| **Difícil** | 4 (61 celdas) | 300 | 15 | Tablero grande, pero las pilas se bloquean rápido (15). Requiere High-IQ combos. |
-79: 
+### Embudo de Dificultad (Radio Dinámico)
+A diferencia del modo clásico, el radio del tablero cambia dentro de cada nivel para presionar al jugador:
+- **Partidas 1-5**: Radio 4 (Grande) - Espacio para maniobrar.
+- **Partidas 6-8**: Radio 3 (Normal) - El espacio empieza a escasear.
+- **Partidas 9-10**: Radio 2 (Pequeño) - La prueba de fuego final.
+
+### Configuración Efímera
+- El jugador puede configurar metas y límites solo al inicio de cada Nivel (Partida 1).
+- Tras la primera partida, la configuración se bloquea hasta superar el nivel de 10 sub-niveles.
 80: ## Sistema de Amistad (Recambio Inteligente)
 81: 
 82: Cuando el jugador solicita un recambio de pilas (Trash/Refill), la App no genera colores aleatorios. En su lugar, ejecuta el **"Algoritmo de Amistad"** para actuar como un aliado estratega:
@@ -88,4 +91,20 @@ El juego implementa "Presets de Balanceo" (`DIFFICULTY_PRESETS`) que ajustan las
 88: 3.  **Balance de Altura**: Si el tablero está muy saturado, el algoritmo prioriza generar pilas de tamaño 2 o 3 en lugar de 5, para dar "aire" al jugador y evitar el Game Over inmediato.
 89: 
 90: > [!TIP]
-91: > Este sistema transforma el botón de recambio en un "botón de estrategia" que el jugador aprende a usar no solo para descartar lo que no quiere, sino para pedir ayuda táctica cuando el tablero se complica.
+91: 
+## Progresión de Obstáculos
+Cada nivel introduce una nueva mecánica de bloqueo que se suma a las anteriores:
+1. **Roca**: Bloqueo estático total.
+2. **Grieta**: Absorbe 1 ficha de cada pila que pase por encima.
+3. **Imán**: Atrae los saltos cercanos hacia ella.
+4. **Ventilador**: Empuja las fichas lejos de su posición.
+5. **Cristal**: Se bloquea permanentemente tras 3 saltos cercanos.
+6. **Válvula**: Solo permite el paso de un color específico.
+7. **Agujero**: Teletransporta fichas a su par conectado.
+8. **Peaje**: Solo permite saltos de pilas con 5 o más fichas.
+9. **Niebla**: Oculta la información de las celdas vecinas.
+10. **Núcleo**: Cambia de posición tras cada eliminación masiva.
+
+## Comunicación Táctica (UX)
+- **Intelligence Bar**: Barra inferior que describe la función de los obstáculos al pasar el cursor.
+- **Flashcards**: Pantallas de presentación al inicio de cada nivel que introducen la nueva mecánica.

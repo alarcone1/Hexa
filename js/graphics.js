@@ -1,7 +1,7 @@
-import { HEX_SIZE, COLORS } from './constants.js?v=3.0';
+import { HEX_SIZE, COLORS } from './constants.js?v=3.1';
 
-import { state } from './state.js?v=3.0';
-import { axialToPixel, adjustColor } from './utils.js?v=3.0';
+import { state } from './state.js?v=3.1';
+import { axialToPixel, adjustColor } from './utils.js?v=3.1';
 
 export class Particle {
     constructor(x, y, color) {
@@ -141,120 +141,155 @@ export class EliminationEffect {
 }
 
 export class AnimatedChip {
-    constructor(fromQ, fromR, toQ, toR, color, duration = 250) {
-        // Fallback for non-hex colors (like ROCK) to prevent adjustColor crash
-        if (color === 'ROCK') color = '#475569'; // Slate 600
+    constructor(fromQ, fromR, toQ, toR, color, duration = 500, arcHeight = 60, startStackHeight = 0, endStackHeight = 0) {
+        if (color === 'ROCK') color = '#475569';
 
         const from = axialToPixel(fromQ, fromR);
         const to = axialToPixel(toQ, toR);
+
+        // Offset vertical basado en la altura de la pila (-4px por ficha)
+        this.startYOffset = startStackHeight * -4;
+        this.endYOffset = endStackHeight * -4;
+
         this.startX = from.x;
-        this.startY = from.y;
+        this.startY = from.y + this.startYOffset;
         this.endX = to.x;
-        this.endY = to.y;
-        this.x = from.x;
-        this.y = from.y;
+        this.endY = to.y + this.endYOffset;
+
         this.color = color;
-        this.progress = 0;
         this.duration = duration;
+        this.arcHeight = arcHeight;
         this.startTime = performance.now();
+        this.progress = 0;
         this.done = false;
-        this.flipPhase = 0; // 0 a 1, representa la rotación de la "hoja"
+
+        this.x = this.startX;
+        this.y = this.startY;
+        this.thickness = 8;
     }
 
     update() {
         const elapsed = performance.now() - this.startTime;
         this.progress = Math.min(elapsed / this.duration, 1);
 
-        // Easing más suave para movimiento tipo página
-        const eased = this.easeInOutQuad(this.progress);
-
-        // Interpolación de posición
-        this.x = this.startX + (this.endX - this.startX) * eased;
-        this.y = this.startY + (this.endY - this.startY) * eased;
-
-        // Efecto de arco más pronunciado (la ficha sube como hoja volteando)
-        const arcHeight = 20 + (this.duration / 100) * 3;
-        const arc = Math.sin(this.progress * Math.PI) * arcHeight;
-        this.y -= arc;
-
-        if (this.progress >= 1) {
-            this.done = true;
+        if (this.progress < 1) {
+            const t = this.progress;
+            this.x = this.startX + (this.endX - this.startX) * t;
+            const baseY = this.startY + (this.endY - this.startY) * t;
+            const arc = Math.sin(t * Math.PI) * this.arcHeight;
+            this.y = baseY - arc;
+        } else {
+            const settleTime = 250;
+            const sProgress = Math.min((elapsed - this.duration) / settleTime, 1);
+            if (sProgress >= 1) {
+                this.done = true;
+                this.x = this.endX;
+                this.y = this.endY;
+            } else {
+                const bounce = Math.sin(sProgress * Math.PI * 4) * 4 * Math.exp(-sProgress * 6);
+                this.y = this.endY - bounce;
+            }
         }
-
-        // Actualizar fase de volteo
-        this.flipPhase = this.progress;
-    }
-
-    easeInOutQuad(t) {
-        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     }
 
     draw(ctx, rotation, canvasWidth, canvasHeight) {
         ctx.save();
         ctx.translate(canvasWidth / 2, canvasHeight / 2);
+
+        // APLICAR ESCALA GLOBAL DEL ESTADO (Crucial para alineación)
+        ctx.scale(state.scale, state.scale);
         ctx.rotate(rotation * Math.PI / 180);
+
+        // SOMBRA DINÁMICA
+        const currentArc = this.progress < 1 ? Math.sin(this.progress * Math.PI) * this.arcHeight : 0;
+        const shadowAlpha = this.progress < 1 ? Math.max(0, 0.2 - currentArc * 0.001) : 0;
+
+        const radius = HEX_SIZE * 0.85; // Fiel a CHIP_RADIUS
+
+        if (shadowAlpha > 0) {
+            ctx.save();
+            ctx.translate(this.x, this.y + currentArc + 4);
+            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, radius * 0.75, radius * 0.35, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 3D CHIP SIMULATION
+        const t = this.progress;
+        const flipAngle = t * Math.PI;
+        const cos = Math.cos(flipAngle);
+        const sin = Math.abs(Math.sin(flipAngle));
+
         ctx.translate(this.x, this.y);
 
-        // Efecto de "volteo" tipo hoja de libro
-        const flipAngle = Math.sin(this.flipPhase * Math.PI);
-        const scaleX = Math.cos(this.flipPhase * Math.PI * 0.7); // Compresión horizontal
-        const scaleY = 1 + flipAngle * 0.1; // Pequeño estiramiento vertical
-
-        ctx.scale(Math.abs(scaleX) * 0.8 + 0.2, scaleY);
-        ctx.rotate(flipAngle * 0.15); // Rotación sutil en Z
-
-        // Sombra dinámica
-        const shadowIntensity = 0.4 + flipAngle * 0.4;
-        ctx.shadowColor = `rgba(0,0,0,${shadowIntensity})`;
-        ctx.shadowBlur = 6 + flipAngle * 10;
-        ctx.shadowOffsetY = 3 + flipAngle * 6;
-        ctx.shadowOffsetX = flipAngle * 4;
-
-        // Dibujar ficha con esquinas redondeadas
-        const size = HEX_SIZE * 0.65;
-        ctx.beginPath();
-        const vertices = [];
+        // Puntos del hexágono (Orientación plana para coincidir con tablero)
+        const pts = [];
         for (let i = 0; i < 6; i++) {
-            const angle = (Math.PI / 3) * i - Math.PI / 6;
-            vertices.push({
-                x: size * Math.cos(angle),
-                y: size * Math.sin(angle)
-            });
+            const angle = (Math.PI / 3) * i;
+            pts.push({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
         }
 
-        for (let i = 0; i < 6; i++) {
-            const curr = vertices[i];
-            const next = vertices[(i + 1) % 6];
-            const midX = (curr.x + next.x) / 2;
-            const midY = (curr.y + next.y) / 2;
-            const t = 0.75;
-            const startX = curr.x * t + midX * (1 - t);
-            const startY = curr.y * t + midY * (1 - t);
-            const endX = next.x * t + midX * (1 - t);
-            const endY = next.y * t + midY * (1 - t);
+        const buildRoundedPath = (c) => {
+            c.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const curr = pts[i];
+                const next = pts[(i + 1) % 6];
+                const midX = (curr.x + next.x) / 2;
+                const midY = (curr.y + next.y) / 2;
+                const weight = 0.75;
+                const startX = curr.x * weight + midX * (1 - weight);
+                const startY = curr.y * weight + midY * (1 - weight);
+                const endX = next.x * weight + midX * (1 - weight);
+                const endY = next.y * weight + midY * (1 - weight);
+                if (i === 0) c.moveTo(startX, startY);
+                c.lineTo(startX, startY);
+                c.quadraticCurveTo(midX, midY, endX, endY);
+            }
+            c.closePath();
+        };
 
-            if (i === 0) ctx.moveTo(startX, startY);
-            ctx.lineTo(startX, startY);
-            ctx.quadraticCurveTo(midX, midY, endX, endY);
+        // Canto (Grosor 3D)
+        if (sin > 0.05) {
+            ctx.fillStyle = adjustColor(this.color, -50);
+            for (let i = 0; i < 6; i++) {
+                const p1 = pts[i];
+                const p2 = pts[(i + 1) % 6];
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y * cos);
+                ctx.lineTo(p2.x, p2.y * cos);
+                ctx.lineTo(p2.x, p2.y * cos + this.thickness * sin);
+                ctx.lineTo(p1.x, p1.y * cos + this.thickness * sin);
+                ctx.closePath();
+                ctx.fill();
+            }
         }
-        ctx.closePath();
 
-        // Gradiente con brillo dinámico
-        const brightness = 20 + flipAngle * 30;
-        const grad = ctx.createRadialGradient(0, -size / 3, 0, 0, 0, size);
-        grad.addColorStop(0, adjustColor(this.color, brightness));
+        // Cara visible
+        ctx.save();
+        ctx.scale(1, cos);
+        buildRoundedPath(ctx);
+
+        const grad = ctx.createRadialGradient(0, -radius / 3, 0, 0, 0, radius);
+        const bright = cos < 0 ? -25 : 30; // Diferenciar caras
+        grad.addColorStop(0, adjustColor(this.color, bright));
         grad.addColorStop(0.5, this.color);
-        grad.addColorStop(1, adjustColor(this.color, -40));
+        grad.addColorStop(1, adjustColor(this.color, -50));
+
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Borde brillante
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.strokeStyle = `rgba(255,255,255,${0.3 + flipAngle * 0.4})`;
+        // Bordes (Sistema de Doble Borde de ESTILO.md)
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        ctx.strokeStyle = adjustColor(this.color, -30);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.restore();
 
         ctx.restore();
     }
@@ -291,6 +326,14 @@ export function drawHexChips(ctx, q, r, chips) {
     const { x, y } = axialToPixel(q, r);
     ctx.save();
     ctx.translate(x, y);
+
+    // SPECIAL HANDLING: OBSTACLES (CRYSTAL EMERGENCE)
+    const cell = state.board.get(`${q},${r}`);
+    if (cell && cell.isObstacle) {
+        drawCrystalObstacle(ctx, cell.spawnTime || 0);
+        ctx.restore();
+        return;
+    }
 
     // Dibujar chips apilados
     const stackHeight = Math.min(chips.length, 15);
@@ -335,29 +378,83 @@ export function drawHexChips(ctx, q, r, chips) {
 
 const CHIP_RADIUS = HEX_SIZE * 0.85; // Helper constant
 
+function drawCrystalObstacle(ctx, spawnTime) {
+    const elapsed = performance.now() - spawnTime;
+    const duration = 1200; // ms de emergencia
+    const progress = Math.min(elapsed / duration, 1);
+
+    // Animación de "Emergencia": Crecimiento y Espiral
+    const easedProgress = Math.pow(progress, 0.5); // Rápido al inicio
+    const scale = easedProgress;
+    const rotation = (1 - easedProgress) * Math.PI; // Efecto espiral al salir
+
+    ctx.save();
+    ctx.rotate(rotation);
+    ctx.scale(scale, scale);
+
+    const size = HEX_SIZE * 0.9;
+
+    // 1. CUERPO: Cristal de Obsidiana (Facetas)
+    const grad = ctx.createLinearGradient(-size, -size, size, size);
+    grad.addColorStop(0, "#0f172a"); // Deep dark
+    grad.addColorStop(0.5, "#1e293b"); // Slate 800
+    grad.addColorStop(1, "#020617"); // Blackest
+
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        ctx.lineTo(size * Math.cos(angle), size * Math.sin(angle));
+    }
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // 2. FACETAS INTERNAS (Corte de diamante/cristal)
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(size * Math.cos(angle), size * Math.sin(angle));
+        ctx.stroke();
+    }
+
+    // 3. BORDES NEÓN (Pulsantes)
+    const pulse = Math.sin(performance.now() / 400) * 0.5 + 0.5;
+    ctx.strokeStyle = `rgba(56, 189, 248, ${0.3 + pulse * 0.4})`; // Sky 400 neón
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 10 * pulse;
+    ctx.shadowColor = "#38bdf8";
+
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        ctx.lineTo(size * Math.cos(angle), size * Math.sin(angle));
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // 4. NÚCLEO DE ENERGÍA
+    const corePulse = Math.sin(performance.now() / 200) * 0.5 + 0.5;
+    const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.4);
+    coreGrad.addColorStop(0, `rgba(56, 189, 248, ${0.2 * corePulse})`);
+    coreGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
 function drawSingleChip(ctx, color) {
     const size = CHIP_RADIUS;
 
-    // OBSTACLE RENDERING
+    // OBSTACLE FALLBACK (Si se intenta dibujar ROCK como chip individual)
     if (color === 'ROCK') {
-        ctx.fillStyle = '#475569'; // Slate 600
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-            const angle = (Math.PI / 3) * i;
-            ctx.lineTo(size * Math.cos(angle), size * Math.sin(angle));
-        }
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Simular rugosidad o detalle
-        ctx.fillStyle = '#94a3b8';
-        ctx.beginPath();
-        ctx.arc(-5, -5, 4, 0, Math.PI * 2);
-        ctx.fill();
+        drawCrystalObstacle(ctx, performance.now() - 10000); // Ya salió hace mucho
         return;
     }
 
