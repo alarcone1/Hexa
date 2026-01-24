@@ -1,21 +1,23 @@
-import { state, hexRadius, setHexRadius } from './state.js?v=3.1';
-import { COLORS } from './constants.js?v=3.1';
-import { getNeighbors } from './utils.js?v=3.1';
-import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=3.1';
-import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver } from './ui.js?v=3.1';
+import { state, hexRadius, setHexRadius } from './state.js?v=6.0';
+import { COLORS } from './constants.js?v=6.0';
+import { getNeighbors } from './utils.js?v=6.0';
+import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=6.0';
+import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver, updateDifficultyButtons } from './ui.js?v=6.0';
 
 // --- INITIALIZATION ---
 export function initBoard() {
     state.board.clear();
 
-    // Determinar Radio según Sub-nivel (Funnel de Dificultad)
-    // Para Niveles iniciales (1-2), empezamos en Radio 3 para evitar desbordamiento visual
-    let radius = (state.level <= 2) ? 3 : 4;
+    // Embudo de Dificultad (Ascensión)
+    // Partidas 1-5: Grande (Radio 5)
+    // Partidas 6-8: Normal (Radio 4)
+    // Partidas 9-10: Pequeño (Radio 3)
+    let radius;
+    if (state.subLevel <= 5) radius = 5;
+    else if (state.subLevel <= 8) radius = 4;
+    else radius = 3;
 
-    if (state.subLevel >= 6 && state.subLevel <= 8) radius = 3;
-    else if (state.subLevel >= 9) radius = 2;
-
-    state.difficulty = radius; // Sincronizar estado
+    state.difficulty = radius; // Sincronizar estado global
 
     for (let q = -radius; q <= radius; q++) {
         let r1 = Math.max(-radius, -q - radius);
@@ -32,6 +34,9 @@ export function initBoard() {
     // Update Level Indicator
     const levelInd = document.getElementById('level-indicator');
     if (levelInd) levelInd.innerText = `NIVEL ${state.level} - ${state.subLevel}/10`;
+
+    // Sincronizar UI de configuración
+    updateDifficultyButtons();
 }
 
 function applyLevelLayout(level) {

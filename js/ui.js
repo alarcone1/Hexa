@@ -1,7 +1,7 @@
-import { state, saveProgress } from './state.js?v=3.1';
-import { COLORS } from './constants.js?v=3.1';
-import { formatTime } from './utils.js?v=3.1';
-import { spawnConfetti } from './graphics.js?v=3.1';
+import { state, saveProgress } from './state.js?v=6.0';
+import { COLORS, OBSTACLE_TYPES } from './constants.js?v=6.0';
+import { formatTime } from './utils.js?v=6.0';
+import { spawnConfetti } from './graphics.js?v=6.0';
 
 // Elementos del DOM
 const scoreEl = document.getElementById('score');
@@ -270,20 +270,20 @@ export function toggleConfig() {
 export function updateDifficultyButtons() {
     document.querySelectorAll('.segment-btn').forEach(btn => {
         const diff = parseInt(btn.dataset.difficulty);
-        // Rename Labels
-        if (diff === 2) btn.innerText = "Pequeño";
-        if (diff === 3) btn.innerText = "Normal";
-        if (diff === 4) btn.innerText = "Grande";
+        console.log(`Updating button for diff: ${diff}`); // Debug
+        if (diff === 3) btn.innerText = "Pequeño";
+        if (diff === 4) btn.innerText = "Normal";
+        if (diff === 5) btn.innerText = "Grande";
         btn.classList.toggle('active', diff === state.difficulty);
     });
 
     const texts = {
-        2: "Radio 2 • 19 celdas",
         3: "Radio 3 • 37 celdas",
-        4: "Radio 4 • 61 celdas"
+        4: "Radio 4 • 61 celdas",
+        5: "Radio 5 • 91 celdas"
     };
     const descEl = document.getElementById('difficulty-description');
-    if (descEl) descEl.innerText = texts[state.difficulty] || "";
+    if (descEl) descEl.innerText = texts[state.difficulty] || "Selecciona un tamaño";
 }
 
 export function toggleHelp() {
@@ -308,7 +308,7 @@ export function updateFriendshipLabel(value) {
 
 export function updateRevealLabel(value) {
     const lbl = document.getElementById('reveal-label');
-    if (lbl) lbl.innerText = value;
+    if (lbl) lbl.innerText = value + " pts";
 }
 
 export function updateAnalysisLabel(value) {
@@ -388,7 +388,12 @@ export function showLevelFlashcard(level, obstacle) {
     const obsName = document.getElementById('flash-obstacle-name');
     const obsDesc = document.getElementById('flash-obstacle-desc');
 
-    title.innerText = `NIVEL ${level}`;
+    if (state.subLevel > 1) {
+        title.innerHTML = `<span style="font-size: 0.6em; display: block; opacity: 0.8;">SESIÓN REANUDADA</span>NIVEL ${level}`;
+    } else {
+        title.innerText = `NIVEL ${level}`;
+    }
+
     if (obstacle) {
         obsName.innerText = obstacle.name;
         obsDesc.innerText = obstacle.desc;
@@ -427,5 +432,4 @@ export function handleCellHover(cell) {
     }
 }
 
-import { OBSTACLE_TYPES } from './constants.js?v=3.1';
 

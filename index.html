@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HexaFlow: Strategic Honeycomb</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#020617">
+    <link rel="apple-touch-icon" href="icon.png">
     <script>
         window.onerror = function (msg, url, lineNo, columnNo, error) {
             const container = document.getElementById('message-overlay');
@@ -22,7 +25,7 @@
         };
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css?v=4.1">
+    <link rel="stylesheet" href="style.css?v=6.0">
 </head>
 
 <body>
@@ -260,12 +263,12 @@
                 <h3 style="text-align: center; color: var(--color-gold); margin-bottom: 10px; font-size: 1rem;">Tamaño
                     del Tablero</h3>
                 <div class="difficulty-segmented-control" style="margin-bottom: 20px;">
-                    <button class="segment-btn ranking-filter" data-difficulty="2"
-                        onclick="showRankingModal(2)">Pequeño</button>
-                    <button class="segment-btn ranking-filter active" data-difficulty="3"
-                        onclick="showRankingModal(3)">Normal</button>
-                    <button class="segment-btn ranking-filter" data-difficulty="4"
-                        onclick="showRankingModal(4)">Grande</button>
+                    <button class="segment-btn ranking-filter" data-difficulty="3"
+                        onclick="showRankingModal(3)">Pequeño</button>
+                    <button class="segment-btn ranking-filter active" data-difficulty="4"
+                        onclick="showRankingModal(4)">Normal</button>
+                    <button class="segment-btn ranking-filter" data-difficulty="5"
+                        onclick="showRankingModal(5)">Grande</button>
                 </div>
 
                 <div id="ranking-header-container"></div>
@@ -303,22 +306,22 @@
                         <div class="config-card">
                             <h3><i data-lucide="layout-grid"></i> Tamaño de Tablero</h3>
                             <div class="difficulty-segmented-control">
-                                <button class="segment-btn" data-difficulty="2"
-                                    onclick="setDifficulty(2)">Pequeño</button>
-                                <button class="segment-btn active" data-difficulty="3"
-                                    onclick="setDifficulty(3)">Normal</button>
+                                <button class="segment-btn" data-difficulty="3"
+                                    onclick="setDifficulty(3)">Pequeño</button>
                                 <button class="segment-btn" data-difficulty="4"
-                                    onclick="setDifficulty(4)">Grande</button>
+                                    onclick="setDifficulty(4)">Normal</button>
+                                <button class="segment-btn active" data-difficulty="5"
+                                    onclick="setDifficulty(5)">Grande</button>
                             </div>
-                            <div id="difficulty-description" class="config-desc-small">Radio 3 • 37 celdas</div>
+                            <div id="difficulty-description" class="config-desc-small">Radio 5 • 91 celdas</div>
                         </div>
 
                         <div class="config-card">
                             <h3><i data-lucide="target"></i> Meta de Puntos</h3>
                             <div class="height-slider-container">
-                                <input type="range" id="goal-range" min="50" max="1000" step="50" value="100"
+                                <input type="range" id="goal-range" min="10" max="200" step="10" value="200"
                                     onchange="setGoal(this.value)" oninput="updateGoalLabel(this.value)">
-                                <div class="slider-value"><span id="goal-label">100</span></div>
+                                <div class="slider-value"><span id="goal-label">200</span></div>
                             </div>
                             <p class="config-desc-small">Puntos necesarios para completar el nivel actual.</p>
                         </div>
@@ -351,9 +354,9 @@
                             <div class="height-slider-container">
                                 <input type="range" id="reveal-range" min="0" max="300" step="10" value="150"
                                     onchange="setRevealBonus(this.value)" oninput="updateRevealLabel(this.value)">
-                                <div class="slider-value"><span id="reveal-label">150</span></div>
+                                <div class="slider-value"><span id="reveal-label">150 pts</span></div>
                             </div>
-                            <p class="config-desc-small">Incentivo de la IA para revelarte nuevas jugadas</p>
+                            <p class="config-desc-small">Puntos extra que la IA valora al revelarte nuevas jugadas.</p>
                         </div>
 
                         <div class="config-card">
@@ -382,9 +385,20 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=3.1"></script>
+    <script type="module" src="js/main.js?v=6.0"></script>
     <script>
         lucide.createIcons();
+
+        // Registro de Service Worker (Desactivado temporalmente por incompatibilidad en localhost)
+        /*
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error', err));
+            });
+        }
+        */
     </script>
 </body>
 

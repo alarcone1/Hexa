@@ -1,6 +1,6 @@
-import { state, hexRadius, loadProgress } from './state.js?v=3.1';
-import { COLORS } from './constants.js?v=3.1';
-import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=3.1';
+import { state, hexRadius, loadProgress } from './state.js?v=6.0';
+import { COLORS } from './constants.js?v=6.0';
+import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=6.0';
 import {
     updateStat,
     updatePileUI,
@@ -20,13 +20,13 @@ import {
     filterRankingByDifficulty,
     showLevelFlashcard,
     handleCellHover
-} from './ui.js?v=3.1';
+} from './ui.js?v=6.0';
 import {
     drawHexBackground,
     drawHexChips,
     drawFlowArrow
-} from './graphics.js?v=3.1';
-import { pixelToAxial } from './utils.js?v=3.1';
+} from './graphics.js?v=6.0';
+import { pixelToAxial } from './utils.js?v=6.0';
 
 const canvas = document.getElementById('gameCanvas');
 if (!canvas) console.error("Canvas element not found!");
@@ -36,8 +36,14 @@ console.log("Main.js loaded. Initializing...");
 
 // --- GAME CONTROL ---
 
-function resetGame() {
+function resetGame(isNewSession = false) {
     console.log("Resetting game...");
+
+    // Cargar progreso al inicio del reset si es una sesión nueva
+    if (isNewSession) {
+        loadProgress();
+    }
+
     state.score = 0;
 
     // Config goal
@@ -74,31 +80,34 @@ function resetGame() {
         overlay.innerText = '';
     }
 
-    resize(); // Recalcular escala segun dificultad
-
     updateStat('score', 0);
     updateStat('goal', state.goal);
     updateStat('moves-count', 0);
 
     document.getElementById('mulligan-btn').innerHTML = `<span class="btn-icon" data-lucide="shuffle"></span> Otra Tanda (3)`;
     if (window.lucide) window.lucide.createIcons();
-
     const gameoverModal = document.getElementById('gameover-modal');
     gameoverModal.classList.remove('active');
 
     initBoard();
-    refillPlayerPiles(); // This updates Pile UI
+
+    // Calcular meta según dificultad DEFINIDA por initBoard
+    // Grande: 200, Normal: 100, Pequeño: 50
+    const presets = { 3: 50, 4: 100, 5: 200 };
+    state.goal = presets[state.difficulty] || 100;
+
+    resize();
+    updateStat('goal', state.goal);
+    refillPlayerPiles();
     renderActiveColors();
 
-    // ASCENSIÓN: Mostrar Flashcard al inicio del Nivel (Partida 1)
-    if (state.subLevel === 1) {
-        import('./constants.js?v=3.1').then(m => {
-            const types = ['ROCK', 'GRIETA', 'IMAN', 'VENTILADOR', 'CRISTAL', 'VALVULA', 'AGUJERO', 'PEAJE', 'NIEBLA', 'NUCLEO'];
-            const obstacleType = types[Math.min(state.level - 2, types.length - 1)];
-            const info = m.OBSTACLE_TYPES[obstacleType] || null;
-            showLevelFlashcard(state.level, info);
-        });
-    }
+    // ASCENSIÓN: Mostrar Flashcard siempre al iniciar para dar contexto
+    import('./constants.js?v=6.0').then(m => {
+        const types = ['ROCK', 'GRIETA', 'IMAN', 'VENTILADOR', 'CRISTAL', 'VALVULA', 'AGUJERO', 'PEAJE', 'NIEBLA', 'NUCLEO'];
+        const obstacleType = types[Math.min(state.level - 2, types.length - 1)];
+        const info = m.OBSTACLE_TYPES[obstacleType] || null;
+        showLevelFlashcard(state.level, info);
+    });
 }
 
 function startGame() {
@@ -130,11 +139,11 @@ function setDifficulty(level) {
     state.difficulty = level;
     console.log(`Difficulty set to: ${level}`);
 
-    // Presets Definition (Moved inside for safety)
+    // Presets Definition (Unificados según solicitud del usuario)
     const presets = {
-        2: { goal: 100, height: 25 }, // Fácil
-        3: { goal: 200, height: 20 }, // Normal
-        4: { goal: 300, height: 15 }  // Difícil
+        3: { goal: 50, height: 25 },  // Pequeño (Radio 3)
+        4: { goal: 100, height: 20 }, // Normal (Radio 4)
+        5: { goal: 200, height: 15 }  // Grande (Radio 5)
     };
 
     // Apply Presets
@@ -237,7 +246,7 @@ function resize() {
     // Calcular escala dinámica basada en el tablero
     // El tablero tiene radio 'state.difficulty'. 
     // Ancho total en hexes approx: (2 * radius + 1) * HEX_SIZE * 2.2
-    const boardRadius = state.difficulty || 3;
+    const boardRadius = state.difficulty || 5;
     const boardWidthPx = (2 * boardRadius + 1) * 40 * 2.2; // Aumentado factor de seguridad de 1.8 a 2.2
     const boardHeightPx = (2 * boardRadius + 1) * 40 * 2.2;
 
@@ -503,7 +512,5 @@ function render() {
 
 // Start
 resize();
-loadProgress(); // Cargar nivel guardado antes de inicializar tablero
-initBoard();
-resetGame();
+resetGame(true); // Pasar true para cargar el progreso al iniciar
 requestAnimationFrame(render);

@@ -73,9 +73,9 @@ El juego se organiza en una campaña de 12 niveles finitos. Cada nivel consta de
 
 ### Embudo de Dificultad (Radio Dinámico)
 A diferencia del modo clásico, el radio del tablero cambia dentro de cada nivel para presionar al jugador:
-- **Partidas 1-5**: Radio 4 (Grande) - Espacio para maniobrar.
-- **Partidas 6-8**: Radio 3 (Normal) - El espacio empieza a escasear.
-- **Partidas 9-10**: Radio 2 (Pequeño) - La prueba de fuego final.
+- **Partidas 1-5**: Radio 5 (Grande) - Espacio para maniobrar.
+- **Partidas 6-8**: Radio 4 (Normal) - El espacio empieza a escasear.
+- **Partidas 9-10**: Radio 3 (Pequeño) - La prueba de fuego final.
 
 ### Configuración Efímera
 - El jugador puede configurar metas y límites solo al inicio de cada Nivel (Partida 1).

@@ -1,9 +1,9 @@
 export const state = {
     score: 0,
-    goal: 150,
+    goal: 200,
     mulligans: 3,
     numColors: 3,
-    difficulty: 2,
+    difficulty: 5,
     level: 1,           // Nivel actual de Ascensión (1-12)
     subLevel: 1,        // Sub-nivel actual (1-10)
     isConfigLocked: false, // Bloquea configuración tras la partida 1 de cada nivel
@@ -37,7 +37,7 @@ export const state = {
     analysisHeight: 5        // Altura mínima para predecir necesidades
 };
 
-export let hexRadius = 2;
+export let hexRadius = 4;
 
 export function setHexRadius(val) {
     hexRadius = val;
