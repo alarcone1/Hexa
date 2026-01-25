@@ -7,10 +7,10 @@ description: Formatea los mensajes de confirmación de Git según la especificac
 
 Cuando se escribe un mensaje de confirmación de Git, debes seguir la especificación de confirmaciones convencionales.
 
-## Format
-`<type>[optional scope]: <description>`
+## Formato
+`<tipo>[ámbito opcional]: <descripción>`
 
-## Allowed Types
+## Tipos Permitidos
 - **feat**: Nueva característica
 - **fix**: Corrección de error
 - **docs**: Cambios solo en la documentación
@@ -20,9 +20,9 @@ Cuando se escribe un mensaje de confirmación de Git, debes seguir la especifica
 - **test**: Añadir pruebas faltantes o corregir pruebas existentes
 - **chore**: Cambios en el proceso de construcción o herramientas auxiliares y bibliotecas como la generación de documentación
 
-## Instructions
+## Instrucciones
 1. Analiza los cambios para determinar el tipo principal.
-2. Identifica el `scope` si es aplicable (por ejemplo, un componente o archivo específico).
+2. Identifica el `ámbito` si es aplicable (por ejemplo, un componente o archivo específico).
 3. Escribe una descripción concisa en modo imperativo (por ejemplo, "añadir función" no "función añadida").
 4. Si hay cambios que rompen la compatibilidad, agrega un pie de página que comience con `BREAKING CHANGE:`.
 
