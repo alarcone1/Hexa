@@ -49,7 +49,13 @@ export function saveProgress() {
     const data = {
         level: state.level,
         subLevel: state.subLevel,
-        isConfigLocked: state.isConfigLocked
+        isConfigLocked: state.isConfigLocked,
+        // Guardar configuración del usuario para mantenerla durante los 10 sub-niveles
+        goal: state.goal,
+        maxStackHeight: state.maxStackHeight,
+        friendshipThreshold: state.friendshipThreshold,
+        revealBonus: state.revealBonus,
+        analysisHeight: state.analysisHeight
     };
     console.log("GUARDANDO PROGRESO ->", data);
     localStorage.setItem(STORAGE_KEY_PROG, JSON.stringify(data));
@@ -64,7 +70,15 @@ export function loadProgress() {
             state.level = data.level || 1;
             state.subLevel = data.subLevel || 1;
             state.isConfigLocked = data.isConfigLocked || false;
-            console.log("PROGRESO RESTAURADO:", state.level, state.subLevel);
+
+            // Restaurar configuración del usuario si existe
+            if (data.goal !== undefined) state.goal = data.goal;
+            if (data.maxStackHeight !== undefined) state.maxStackHeight = data.maxStackHeight;
+            if (data.friendshipThreshold !== undefined) state.friendshipThreshold = data.friendshipThreshold;
+            if (data.revealBonus !== undefined) state.revealBonus = data.revealBonus;
+            if (data.analysisHeight !== undefined) state.analysisHeight = data.analysisHeight;
+
+            console.log("PROGRESO RESTAURADO:", state.level, state.subLevel, "Meta:", state.goal);
         } catch (e) {
             console.error("Error cargando progreso:", e);
         }

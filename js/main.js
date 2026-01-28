@@ -1,6 +1,6 @@
-import { state, hexRadius, loadProgress } from './state.js?v=6.0';
-import { COLORS } from './constants.js?v=6.0';
-import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=6.0';
+import { state, hexRadius, loadProgress } from './state.js?v=14.0';
+import { COLORS } from './constants.js?v=14.0';
+import { initBoard, refillPlayerPiles, mulligan, processMove, checkEliminationAt, findFlowTarget } from './logic.js?v=14.0';
 import {
     updateStat,
     updatePileUI,
@@ -19,14 +19,15 @@ import {
     saveScore,
     filterRankingByDifficulty,
     showLevelFlashcard,
-    handleCellHover
-} from './ui.js?v=6.0';
+    handleCellHover,
+    updateLevelProgressGrid
+} from './ui.js?v=14.0';
 import {
     drawHexBackground,
     drawHexChips,
     drawFlowArrow
-} from './graphics.js?v=6.0';
-import { pixelToAxial } from './utils.js?v=6.0';
+} from './graphics.js?v=14.0';
+import { pixelToAxial } from './utils.js?v=14.0';
 
 const canvas = document.getElementById('gameCanvas');
 if (!canvas) console.error("Canvas element not found!");
@@ -42,17 +43,45 @@ function resetGame(isNewSession = false) {
     // Cargar progreso al inicio del reset si es una sesión nueva
     if (isNewSession) {
         loadProgress();
+
+        // Si no hay progreso guardado (tras reinicio total), asegurar valores iniciales
+        const hasProgress = localStorage.getItem('hexaflow_progression_v1');
+        if (!hasProgress) {
+            state.level = 1;
+            state.subLevel = 1;
+            state.isConfigLocked = false;
+            console.log("Sin progreso guardado - valores reseteados a inicial");
+        }
+
+        // Sincronizar sliders de configuración con los valores cargados
+        const goalSlider = document.getElementById('goal-range');
+        if (goalSlider) {
+            goalSlider.value = state.goal;
+            updateGoalLabel(state.goal);
+        }
+        const heightSlider = document.getElementById('height-range');
+        if (heightSlider) {
+            heightSlider.value = state.maxStackHeight;
+            updateHeightLabel(state.maxStackHeight);
+        }
+        const friendshipSlider = document.getElementById('friendship-range');
+        if (friendshipSlider) {
+            friendshipSlider.value = state.friendshipThreshold * 100;
+            updateFriendshipLabel(state.friendshipThreshold * 100);
+        }
     }
 
     state.score = 0;
 
-    // Config goal
-    const goalSlider = document.getElementById('goal-range');
-    if (goalSlider) {
-        state.goal = parseInt(goalSlider.value);
-    } else {
-        state.goal = 100 + (state.difficulty * 20);
+    // Config goal: Solo sincronizar con slider si es la primera partida del nivel (subLevel 1)
+    // En sub-niveles posteriores, se respeta la configuración guardada
+    if (state.subLevel === 1) {
+        const goalSlider = document.getElementById('goal-range');
+        if (goalSlider) {
+            state.goal = parseInt(goalSlider.value);
+        }
     }
+    // Si no es subLevel 1, state.goal ya viene de loadProgress()
 
     state.numColors = 3;
     state.mulligans = 3;
@@ -91,18 +120,17 @@ function resetGame(isNewSession = false) {
 
     initBoard();
 
-    // Calcular meta según dificultad DEFINIDA por initBoard
-    // Grande: 200, Normal: 100, Pequeño: 50
-    const presets = { 3: 50, 4: 100, 5: 200 };
-    state.goal = presets[state.difficulty] || 100;
+    // La meta y configuración se mantienen desde loadProgress() o desde la configuración del usuario
+    // NO se sobreescriben con presets para respetar la elección del jugador durante los 10 sub-niveles
 
     resize();
     updateStat('goal', state.goal);
     refillPlayerPiles();
     renderActiveColors();
+    updateLevelProgressGrid();
 
     // ASCENSIÓN: Mostrar Flashcard siempre al iniciar para dar contexto
-    import('./constants.js?v=6.0').then(m => {
+    import('./constants.js?v=14.0').then(m => {
         const types = ['ROCK', 'GRIETA', 'IMAN', 'VENTILADOR', 'CRISTAL', 'VALVULA', 'AGUJERO', 'PEAJE', 'NIEBLA', 'NUCLEO'];
         const obstacleType = types[Math.min(state.level - 2, types.length - 1)];
         const info = m.OBSTACLE_TYPES[obstacleType] || null;
@@ -199,13 +227,34 @@ function showRankingFromModal() {
     showRankingModal();
 }
 
-function resetRankingsConfirm() {
-    if (confirm('¿Seguro que quieres borrar todos los datos de juego y progreso de campaña?')) {
-        localStorage.removeItem('hexaflow_scores_v4');
-        localStorage.removeItem('hexaflow_progression_v1');
-        alert('Datos borrados. El juego se reiniciará.');
-        location.reload();
+function resetRankingsConfirm(event) {
+    // Prevenir que otros eventos interfieran
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
+
+    // Mostrar modal de confirmación personalizado
+    const modal = document.getElementById('reset-confirm-modal');
+    if (modal) {
+        modal.classList.add('active');
+        if (window.lucide) window.lucide.createIcons();
+    }
+}
+
+// Cerrar modal de confirmación sin hacer nada
+function closeResetConfirm() {
+    const modal = document.getElementById('reset-confirm-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Ejecutar el reinicio real
+function executeReset() {
+    localStorage.removeItem('hexaflow_scores_v4');
+    localStorage.removeItem('hexaflow_progression_v1');
+    location.reload();
 }
 
 // --- EXPOSE TO WINDOW ---
@@ -232,6 +281,8 @@ window.showRankingFromModal = showRankingFromModal;
 window.closeRanking = closeRanking;
 window.showRankingModal = showRankingModal;
 window.resetRankingsConfirm = resetRankingsConfirm;
+window.closeResetConfirm = closeResetConfirm;
+window.executeReset = executeReset;
 window.filterRankingByDifficulty = filterRankingByDifficulty;
 
 // --- EVENT LISTENERS ---

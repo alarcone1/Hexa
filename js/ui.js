@@ -1,7 +1,7 @@
-import { state, saveProgress } from './state.js?v=6.0';
-import { COLORS, OBSTACLE_TYPES } from './constants.js?v=6.0';
-import { formatTime } from './utils.js?v=6.0';
-import { spawnConfetti } from './graphics.js?v=6.0';
+import { state, saveProgress } from './state.js?v=14.0';
+import { COLORS, OBSTACLE_TYPES } from './constants.js?v=14.0';
+import { formatTime } from './utils.js?v=14.0';
+import { spawnConfetti } from './graphics.js?v=14.0';
 
 // Elementos del DOM
 const scoreEl = document.getElementById('score');
@@ -16,16 +16,22 @@ const configModal = document.getElementById('config-modal');
 
 export function updateStat(id, value) {
     const el = document.getElementById(id);
-    if (el) {
-        const current = parseInt(el.innerText) || 0;
-        if (current !== value) {
-            el.innerText = value;
-            el.classList.remove('changed');
-            void el.offsetWidth; // Trigger reflow
-            el.classList.add('changed');
-        } else {
-            el.innerText = value;
-        }
+    if (!el) return;
+
+    // Special handling for level updates to use hexagons
+    if (id === 'level-indicator') {
+        updateLevelProgressGrid();
+        return; // Prevent overwriting the entire container with a single number
+    }
+
+    const current = parseInt(el.innerText) || 0;
+    if (current !== value) {
+        el.innerText = value;
+        el.classList.remove('changed');
+        void el.offsetWidth; // Trigger reflow
+        el.classList.add('changed');
+    } else {
+        el.innerText = value;
     }
 
     // Update Progress Bar if score or goal changes
@@ -59,6 +65,33 @@ function updateGoalProgress() {
             label.style.color = 'var(--color-accent)';
         }
     }
+}
+
+export function updateLevelProgressGrid() {
+    const title = document.getElementById('level-title');
+    // Envolver el número en span para animarlo independientemente
+    if (title) title.innerHTML = `NIVEL <span class="level-number">${state.level}</span>`;
+
+    const hexes = document.querySelectorAll('.mini-hex');
+    hexes.forEach((hex, index) => {
+        const subLevelIndex = index + 1;
+        // Limpiar todas las clases previas
+        hex.className = 'mini-hex';
+
+        if (subLevelIndex < state.subLevel) {
+            // Hexágono completado: aplicar intensidad progresiva
+            // Cuanto más cercano al activo, más intenso el azul
+            // intensidad = distancia desde el más antiguo (1) hasta el más reciente (subLevel-1)
+            const intensity = Math.min(subLevelIndex, 9); // Máximo 9 niveles de intensidad
+            hex.classList.add('is-completed', `intensity-${intensity}`);
+        } else if (subLevelIndex === state.subLevel) {
+            // Hexágono activo: amarillo dorado pulsante
+            hex.classList.add('is-active');
+        } else {
+            // Hexágono pendiente: tenue
+            hex.classList.add('is-pending');
+        }
+    });
 }
 
 export function updatePileUI() {

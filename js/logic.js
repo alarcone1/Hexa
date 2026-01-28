@@ -1,8 +1,8 @@
-import { state, hexRadius, setHexRadius } from './state.js?v=6.0';
-import { COLORS } from './constants.js?v=6.0';
-import { getNeighbors } from './utils.js?v=6.0';
-import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=6.0';
-import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver, updateDifficultyButtons } from './ui.js?v=6.0';
+import { state, hexRadius, setHexRadius } from './state.js?v=14.0';
+import { COLORS } from './constants.js?v=14.0';
+import { getNeighbors } from './utils.js?v=14.0';
+import { AnimatedChip, EliminationEffect, drawFlowArrow } from './graphics.js?v=14.0';
+import { updateStat, updatePileUI, addActiveColor, gameWin, showGameOver, updateDifficultyButtons } from './ui.js?v=14.0';
 
 // --- INITIALIZATION ---
 export function initBoard() {
@@ -31,9 +31,8 @@ export function initBoard() {
     // ASCENSION MODE: Apply Layout
     applyLevelLayout(state.level);
 
-    // Update Level Indicator
-    const levelInd = document.getElementById('level-indicator');
-    if (levelInd) levelInd.innerText = `NIVEL ${state.level} - ${state.subLevel}/10`;
+    // Update Level Indicator Grid
+    updateStat('level-indicator', state.level);
 
     // Sincronizar UI de configuración
     updateDifficultyButtons();

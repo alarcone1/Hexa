@@ -24,8 +24,13 @@
             return false;
         };
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css?v=6.0">
+    <link rel="stylesheet" href="style.css?v=14.0">
 </head>
 
 <body>
@@ -39,8 +44,23 @@
         </div>
 
         <div id="hud">
-            <!-- Nivel Actual (Ascensión) -->
-            <div id="level-indicator">NIVEL 1 - 1/10</div>
+            <!-- Nivel Actual (Ascensión con Progreso Hexagonal) -->
+            <div id="level-indicator">
+                <span id="level-title">NIVEL <span class="level-number">1</span></span>
+                <div id="level-progress-hexes">
+                    <!-- Los 10 hexágonos se generarán vía JS o estarán fijos -->
+                    <div class="mini-hex" data-index="1"></div>
+                    <div class="mini-hex" data-index="2"></div>
+                    <div class="mini-hex" data-index="3"></div>
+                    <div class="mini-hex" data-index="4"></div>
+                    <div class="mini-hex" data-index="5"></div>
+                    <div class="mini-hex" data-index="6"></div>
+                    <div class="mini-hex" data-index="7"></div>
+                    <div class="mini-hex" data-index="8"></div>
+                    <div class="mini-hex" data-index="9"></div>
+                    <div class="mini-hex" data-index="10"></div>
+                </div>
+            </div>
 
             <!-- Botones de Sistema (Arriba Izquierda) -->
             <div class="hud-buttons">
@@ -292,6 +312,30 @@
             </div>
         </div>
 
+        <!-- MODAL DE CONFIRMACIÓN DE REINICIO -->
+        <div id="reset-confirm-modal">
+            <div class="reset-confirm-content">
+                <h2><i data-lucide="alert-triangle"></i> ¿Reiniciar desde cero?</h2>
+                <p>Esto borrará:</p>
+                <ul>
+                    <li>• Todo el progreso de niveles</li>
+                    <li>• Configuración guardada</li>
+                    <li>• Ranking de puntuaciones</li>
+                </ul>
+                <p class="reset-warning">El juego volverá al Nivel 1, Sub-nivel 1.</p>
+                <div class="reset-confirm-actions">
+                    <button class="btn btn--gold-outline" onclick="closeResetConfirm()">
+                        <i data-lucide="x"></i>
+                        CANCELAR
+                    </button>
+                    <button class="btn btn--danger" onclick="executeReset()">
+                        <i data-lucide="trash-2"></i>
+                        CONFIRMAR REINICIO
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- MODAL DE CONFIGURACIÓN -->
         <div id="config-modal">
             <div class="config-content advanced-panel">
@@ -372,33 +416,34 @@
                 </div>
 
                 <div class="config-actions">
+                    <button class="btn btn--gold-outline" onclick="toggleConfig()">
+                        <i data-lucide="house"></i>
+                        VOLVER
+                    </button>
                     <button id="cancel-config-btn" class="btn btn--gold" onclick="toggleConfig()">
                         <i data-lucide="check"></i>
                         APLICAR CAMBIOS
                     </button>
-                    <button id="reset-data-btn" class="btn btn--danger-outline" onclick="resetRankingsConfirm()">
+                    <button id="reset-data-btn" class="btn btn--danger-outline" onclick="resetRankingsConfirm(event)">
                         <i data-lucide="trash-2"></i>
-                        RESET DATA
+                        REINICIAR TODO
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=6.0"></script>
+    <script type="module" src="js/main.js?v=14.0"></script>
     <script>
         lucide.createIcons();
 
-        // Registro de Service Worker (Desactivado temporalmente por incompatibilidad en localhost)
+        // Registro de Service Worker (Desactivado temporalmente por incompa        d e        ost)
         /*
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Registered'))
-                    .catch(err => console.log('SW Error', err));
-            });
-        }
-        */
+        if ('service            avigator) {
+            window.addEventL                () => {
+                navigator.serviceWor                    s')
+                    .then(reg => consol                    '))
+                    .catch(err => console            or',                    }          */
     </script>
 </body>
 
